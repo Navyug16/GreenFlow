@@ -38,7 +38,7 @@ const FacilitiesPage = () => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {/* Header / Overview */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
                 <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.05))', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
                     <div style={{ padding: '0.75rem', background: 'rgba(34, 197, 94, 0.2)', borderRadius: '12px', color: 'var(--status-good)' }}>
                         <Factory size={24} />
@@ -76,40 +76,39 @@ const FacilitiesPage = () => {
 
                     return (
                         <div key={facility.id} className="card" style={{ position: 'relative', overflow: 'hidden' }}>
-                            {/* Status Badge */}
-                            <div style={{
-                                position: 'absolute',
-                                top: '1rem',
-                                right: '1rem',
-                                padding: '0.25rem 0.75rem',
-                                borderRadius: '50px',
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                background: facility.status === 'operational' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                color: facility.status === 'operational' ? 'var(--status-good)' : 'var(--status-danger)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.25rem'
-                            }}>
-                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }}></span>
-                                {facility.status.toUpperCase()}
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <div style={{
-                                    padding: '1rem',
-                                    borderRadius: '16px',
-                                    background: `${color}15`,
-                                    color: color,
-                                    border: `1px solid ${color}30`
-                                }}>
-                                    <Icon size={32} />
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <div style={{
+                                        padding: '1rem',
+                                        borderRadius: '16px',
+                                        background: `${color}15`,
+                                        color: color,
+                                        border: `1px solid ${color}30`
+                                    }}>
+                                        <Icon size={32} />
+                                    </div>
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{facility.name}</h3>
+                                        <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-tertiary)', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                            {facility.type.replace('_', ' ')}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{facility.name}</h3>
-                                    <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-tertiary)', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        {facility.type.replace('_', ' ')}
-                                    </p>
+
+                                {/* Status Badge */}
+                                <div style={{
+                                    padding: '0.25rem 0.75rem',
+                                    borderRadius: '50px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600,
+                                    background: facility.status === 'operational' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                    color: facility.status === 'operational' ? 'var(--status-good)' : 'var(--status-danger)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem'
+                                }}>
+                                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }}></span>
+                                    {facility.status.toUpperCase()}
                                 </div>
                             </div>
 

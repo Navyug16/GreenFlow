@@ -102,7 +102,7 @@ const AssetsPage = ({ defaultTab = 'trucks' }: { defaultTab?: 'trucks' | 'bins' 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {/* Header Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
                 <StatsCard label="Total Assets" value={trucks.length + bins.length} icon={Gauge} color="var(--accent-admin)" />
                 <StatsCard label="Active Fleet" value={trucks.filter(t => t.status === 'active').length} icon={Truck} color="var(--status-good)" />
                 <StatsCard label="Smart Bins" value={bins.length} icon={Trash2} color="var(--accent-manager)" />
@@ -112,7 +112,7 @@ const AssetsPage = ({ defaultTab = 'trucks' }: { defaultTab?: 'trucks' | 'bins' 
             {/* Main Content Area */}
             <div className="card" style={{ minHeight: '600px' }}>
                 {/* Toolbar */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.5rem' }}>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <div style={{ display: 'flex', background: 'var(--bg-main)', borderRadius: 'var(--radius-sm)', padding: '4px' }}>
                             <button
@@ -154,7 +154,7 @@ const AssetsPage = ({ defaultTab = 'trucks' }: { defaultTab?: 'trucks' | 'bins' 
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                         {/* Dynamic Button Based on Role */}
                         {user?.role === 'manager' && (
                             <button
@@ -254,32 +254,31 @@ const AssetsPage = ({ defaultTab = 'trucks' }: { defaultTab?: 'trucks' | 'bins' 
                                 onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
                                 onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                             >
-                                {/* Status Indicator */}
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '1rem',
-                                    right: '1rem',
-                                    padding: '0.25rem 0.75rem',
-                                    borderRadius: '50px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 600,
-                                    background: truck.status === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                    color: truck.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.25rem'
-                                }}>
-                                    {truck.status === 'active' ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
-                                    {truck.status.toUpperCase()}
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                    <div style={{ padding: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '12px', color: 'var(--accent-admin)' }}>
-                                        <Truck size={32} />
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div style={{ padding: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '12px', color: 'var(--accent-admin)' }}>
+                                            <Truck size={32} />
+                                        </div>
+                                        <div>
+                                            <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{truck.code}</h3>
+                                            <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>{truck.type}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{truck.code}</h3>
-                                        <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>{truck.type}</p>
+
+                                    {/* Status Indicator */}
+                                    <div style={{
+                                        padding: '0.25rem 0.75rem',
+                                        borderRadius: '50px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 600,
+                                        background: truck.status === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                        color: truck.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem'
+                                    }}>
+                                        {truck.status === 'active' ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+                                        {truck.status.toUpperCase()}
                                     </div>
                                 </div>
 
@@ -311,32 +310,31 @@ const AssetsPage = ({ defaultTab = 'trucks' }: { defaultTab?: 'trucks' | 'bins' 
                                 border: '1px solid var(--glass-border)',
                                 position: 'relative'
                             }}>
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '1rem',
-                                    right: '1rem',
-                                    padding: '0.25rem 0.75rem',
-                                    borderRadius: '50px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 600,
-                                    background: bin.status === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                    color: bin.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)'
-                                }}>
-                                    {bin.status.toUpperCase()}
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                    <div style={{
-                                        padding: '0.75rem',
-                                        background: bin.fillLevel > 90 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(52, 211, 153, 0.1)',
-                                        borderRadius: '12px',
-                                        color: bin.fillLevel > 90 ? 'var(--status-danger)' : 'var(--status-good)'
-                                    }}>
-                                        <Trash2 size={32} />
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div style={{
+                                            padding: '0.75rem',
+                                            background: bin.fillLevel > 90 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(52, 211, 153, 0.1)',
+                                            borderRadius: '12px',
+                                            color: bin.fillLevel > 90 ? 'var(--status-danger)' : 'var(--status-good)'
+                                        }}>
+                                            <Trash2 size={32} />
+                                        </div>
+                                        <div>
+                                            <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Bin #{bin.id}</h3>
+                                            <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>IoT Enabled</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Bin #{bin.id}</h3>
-                                        <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>IoT Enabled</p>
+
+                                    <div style={{
+                                        padding: '0.25rem 0.75rem',
+                                        borderRadius: '50px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 600,
+                                        background: bin.status === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                        color: bin.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)'
+                                    }}>
+                                        {bin.status.toUpperCase()}
                                     </div>
                                 </div>
 
