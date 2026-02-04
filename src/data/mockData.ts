@@ -29,9 +29,9 @@ export const ENGINEER_STATS: KpiStat[] = [
 ];
 
 export const FINANCE_STATS: KpiStat[] = [
-    { label: 'Total Revenue', value: '4.2M', unit: 'SAR', change: 12, icon: 'DollarSign', color: 'var(--status-good)' },
-    { label: 'Energy Generation', value: '1.2M', unit: 'SAR', change: 8, icon: 'Zap', color: 'var(--accent-engineer)' },
-    { label: 'Recycling Output', value: '0.8M', unit: 'SAR', change: 24, icon: 'Recycle', color: 'var(--accent-manager)' },
+    { label: 'Total Revenue', value: '42.5M', unit: 'SAR', change: 12, icon: 'DollarSign', color: 'var(--status-good)' },
+    { label: 'Energy Generation', value: '18.2M', unit: 'SAR', change: 8, icon: 'Zap', color: 'var(--accent-engineer)' },
+    { label: 'Recycling Output', value: '8.4M', unit: 'SAR', change: 24, icon: 'Recycle', color: 'var(--accent-manager)' },
 ];
 
 export const RECENT_INCIDENTS: Incident[] = [

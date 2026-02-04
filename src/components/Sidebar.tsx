@@ -46,6 +46,7 @@ const Sidebar = () => {
             case 'finance':
                 return [
                     { icon: LayoutDashboard, label: 'Overview', path: '/' },
+                    { icon: Factory, label: 'Facilities', path: '/facilities' },
                 ];
             default:
                 return [{ icon: LayoutDashboard, label: 'Overview', path: '/' }];
