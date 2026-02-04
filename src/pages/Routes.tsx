@@ -14,17 +14,68 @@ const truckIcon = new Icon({
 
 const RoutesPage = () => {
     const [optimizing, setOptimizing] = useState(false);
-    const [routes] = useState(TRUCK_ROUTES);
+    const [routes, setRoutes] = useState(TRUCK_ROUTES);
     const [selectedRoute, setSelectedRoute] = useState<string | null>(TRUCK_ROUTES[0].id);
-    const [progress, setProgress] = useState(0); // 0.0 to 1.0 represents full route traversal
+    const [progress, setProgress] = useState(0);
+
+    // Fetch real road geometry from OSRM
+    useEffect(() => {
+        const fetchRouteGeometry = async (waypoints: [number, number][]) => {
+            try {
+                // OSRM expects {lng},{lat};{lng},{lat}
+                const coordString = waypoints.map(p => `${p[1]},${p[0]}`).join(';');
+                const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.code === 'Ok' && data.routes && data.routes[0]) {
+                    // Convert [lng, lat] back to [lat, lng] for Leaflet
+                    return data.routes[0].geometry.coordinates.map((c: number[]) => [c[1], c[0]]) as [number, number][];
+                }
+            } catch (error) {
+                console.error("Failed to fetch route:", error);
+            }
+            return null;
+        };
+
+        const updateRoutes = async () => {
+            // Define strict stops for our demo routes (Start -> Bins -> Facility)
+            // Route T1: Start -> B1 -> B3 -> F1 (Dump Yard)
+            const t1Waypoints: [number, number][] = [
+                [24.7100, 46.6800], // Depot/Start
+                [24.7136, 46.6753], // B1
+                [24.7300, 46.6900], // B3
+                [24.7500, 46.7200]  // F1
+            ];
+
+            // Route T2: Start -> B2 -> F1
+            const t2Waypoints: [number, number][] = [
+                [24.7350, 46.7050], // Depot/Start
+                [24.7200, 46.7000], // B2
+                [24.7500, 46.7200]  // F1
+            ];
+
+            const t1Path = await fetchRouteGeometry(t1Waypoints);
+            const t2Path = await fetchRouteGeometry(t2Waypoints);
+
+            if (t1Path || t2Path) {
+                setRoutes(prev => prev.map(r => {
+                    if (r.id === 'T1' && t1Path) return { ...r, currentPath: t1Path };
+                    if (r.id === 'T2' && t2Path) return { ...r, currentPath: t2Path };
+                    return r;
+                }));
+            }
+        };
+
+        updateRoutes();
+    }, []);
 
     // Simulate AI Optimization
     const handleOptimize = () => {
         setOptimizing(true);
         setTimeout(() => {
             setOptimizing(false);
-            // In a real app, this would fetch new coordinates. 
-            // Here we'll just toggle a "simulated" state for visual feedback.
             alert("AI Optimization Complete! Route efficiency increased by 14%. Projected fuel saving: 12L.");
         }, 3000);
     };

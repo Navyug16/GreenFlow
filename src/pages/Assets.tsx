@@ -3,7 +3,7 @@ import { Truck, Trash2, Battery, AlertTriangle, CheckCircle2, Search, Gauge, Plu
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 
-const AssetsPage = ({ defaultTab = 'trucks' }: { defaultTab?: 'trucks' | 'bins' }) => {
+const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 'trucks' | 'bins', hideTabs?: boolean }) => {
     const { user } = useAuth();
     const { trucks, bins, addTruck, addBin, addRequest } = useData();
 
@@ -114,44 +114,46 @@ const AssetsPage = ({ defaultTab = 'trucks' }: { defaultTab?: 'trucks' | 'bins' 
                 {/* Toolbar */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1.5rem' }}>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', background: 'var(--bg-main)', borderRadius: 'var(--radius-sm)', padding: '4px' }}>
-                            <button
-                                onClick={() => setActiveTab('trucks')}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: 'var(--radius-sm)',
-                                    background: activeTab === 'trucks' ? 'var(--accent-admin)' : 'transparent',
-                                    border: 'none',
-                                    color: activeTab === 'trucks' ? 'white' : 'var(--text-tertiary)',
-                                    cursor: 'pointer',
-                                    fontWeight: 600,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <Truck size={16} /> Trucks
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('bins')}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: 'var(--radius-sm)',
-                                    background: activeTab === 'bins' ? 'var(--accent-manager)' : 'transparent',
-                                    border: 'none',
-                                    color: activeTab === 'bins' ? 'white' : 'var(--text-tertiary)',
-                                    cursor: 'pointer',
-                                    fontWeight: 600,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <Trash2 size={16} /> Bins
-                            </button>
-                        </div>
+                        {!hideTabs && (
+                            <div style={{ display: 'flex', background: 'var(--bg-main)', borderRadius: 'var(--radius-sm)', padding: '4px' }}>
+                                <button
+                                    onClick={() => setActiveTab('trucks')}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: 'var(--radius-sm)',
+                                        background: activeTab === 'trucks' ? 'var(--accent-admin)' : 'transparent',
+                                        border: 'none',
+                                        color: activeTab === 'trucks' ? 'white' : 'var(--text-tertiary)',
+                                        cursor: 'pointer',
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <Truck size={16} /> Trucks
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('bins')}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: 'var(--radius-sm)',
+                                        background: activeTab === 'bins' ? 'var(--accent-manager)' : 'transparent',
+                                        border: 'none',
+                                        color: activeTab === 'bins' ? 'white' : 'var(--text-tertiary)',
+                                        cursor: 'pointer',
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <Trash2 size={16} /> Bins
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>

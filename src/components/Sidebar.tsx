@@ -72,7 +72,7 @@ const Sidebar = () => {
                     <Settings size={20} color="white" />
                 </div>
                 <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 700, letterSpacing: '-0.03em' }}>
-                    Waste<span style={{ color: 'var(--accent-admin)' }}>OS</span>
+                    Green<span style={{ color: 'var(--accent-admin)' }}>Flow</span>
                 </h2>
             </div>
 

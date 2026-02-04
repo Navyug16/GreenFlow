@@ -55,7 +55,7 @@ const Login = () => {
         }}>
             <div style={{ marginBottom: '3rem', textAlign: 'center' }}>
                 <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', background: 'linear-gradient(to right, #38bdf8, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                    Welcome to WasteOS
+                    Welcome to GreenFlow
                 </h1>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '1.125rem' }}>Select your role to access the digital twin dashboard</p>
             </div>

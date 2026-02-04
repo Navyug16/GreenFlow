@@ -39,8 +39,8 @@ function App() {
                 <Route path="admin-users" element={<PlaceholderPage title="Admin Users" />} />
 
                 {/* Engineer Routes */}
-                <Route path="bins" element={<AssetsPage defaultTab="bins" />} />
-                <Route path="trucks" element={<AssetsPage defaultTab="trucks" />} />
+                <Route path="bins" element={<AssetsPage defaultTab="bins" hideTabs={true} />} />
+                <Route path="trucks" element={<AssetsPage defaultTab="trucks" hideTabs={true} />} />
                 <Route path="machinery" element={<MachineryPage />} />
               </Route >
             </Route >
