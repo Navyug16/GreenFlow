@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker } from 'react-leaflet';
-import { DivIcon } from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from 'react-leaflet';
+import L, { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Fuel, Truck, Navigation, RefreshCw } from 'lucide-react';
 import { TRUCK_ROUTES, FACILITIES, BINS } from '../data/mockData';
@@ -26,6 +26,26 @@ const truckIcon = new DivIcon({
     iconAnchor: [20, 20],
     popupAnchor: [0, -20]
 });
+
+// Helper to auto-zoom to selected route
+const MapRecenter = ({ selectedRoute, routes }: { selectedRoute: string | null, routes: any[] }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        if (selectedRoute) {
+            const route = routes.find(r => r.id === selectedRoute);
+            if (route && route.currentPath && route.currentPath.length > 0) {
+                // Calculate bounds
+                const bounds = L.latLngBounds(route.currentPath);
+                map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+            }
+        } else {
+            map.flyTo([24.72, 46.68], 13);
+        }
+    }, [selectedRoute, routes, map]);
+
+    return null;
+};
 
 // Facility Icons
 const getFacilityIcon = (type: string) => new DivIcon({
@@ -320,6 +340,7 @@ const RoutesPage = () => {
                 scrollWheelZoom={true}
                 dragging={true}
             >
+                <MapRecenter selectedRoute={selectedRoute} routes={routes} />
                 <TileLayer
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                     attribution='&copy; CARTO'
