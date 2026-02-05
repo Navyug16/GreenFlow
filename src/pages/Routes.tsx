@@ -111,7 +111,11 @@ const RoutesPage = () => {
                 ]),
                 // T3: Industrial -> Bins -> F2 -> Start
                 fetchAndSet('T3', [
-                    [24.6005, 46.8005], [24.5950, 46.8050], [24.60, 46.80], [24.6005, 46.8005]
+                    [24.6005, 46.8005], // B7
+                    [24.5950, 46.8050], // B8
+                    [24.5940, 46.8060], // B8 Overshoot
+                    [24.60, 46.80],     // F2
+                    [24.6005, 46.8005]
                 ]),
                 // T4: Airport -> Bins -> F3 -> Start
                 fetchAndSet('T4', [
@@ -181,7 +185,7 @@ const RoutesPage = () => {
                         const dist = Math.sqrt(Math.pow(bin.lat - pos[0], 2) + Math.pow(bin.lng - pos[1], 2));
 
                         // Truck is VERY close to bin (< 0.002 degrees approx 200m visually)
-                        if (dist < 0.002) {
+                        if (dist < 0.003) {
                             if (bin.fillLevel > 5) {
                                 // EMPTY THE BIN!
                                 setSimulatedBins(current => current.map(b => b.id === bin.id ? { ...b, fillLevel: 0 } : b));
@@ -264,6 +268,31 @@ const RoutesPage = () => {
                         <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Tons Collected</div>
                     </div>
                 </div>
+
+                {/* Critical Alerts Section */}
+                {simulatedBins.some(b => b.fillLevel > 80) && (
+                    <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', border: '1px solid var(--accent-danger)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-danger)', fontWeight: 700, fontSize: '0.8rem' }}>
+                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-danger)', animation: 'pulse 1s infinite' }}></div>
+                                CRITICAL LEVELS
+                            </div>
+                            {simulatedBins.filter(b => b.fillLevel > 80).length > 1 && (
+                                <span style={{ fontSize: '0.7rem', color: 'var(--accent-manager)', background: 'rgba(52, 211, 153, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                                    Optimizing Routes...
+                                </span>
+                            )}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            {simulatedBins.filter(b => b.fillLevel > 80).map(b => (
+                                <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                                    <span>Bin {b.id}</span>
+                                    <span style={{ color: 'var(--accent-danger)', fontWeight: 600 }}>{Math.round(b.fillLevel)}%</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <div style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 600, opacity: 0.5, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Active Fleets</div>
