@@ -177,10 +177,14 @@ h4 {
     overflow-x: auto;
   }
 
-  /* Tables or Lists */
-  .responsive-table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
+  /* Main Layout Grids */
+  .grid-desktop-2col {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    gap: 1.5rem !important;
+  }
+
+  .map-card {
+    height: 400px !important;
   }
 }

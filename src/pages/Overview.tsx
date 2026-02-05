@@ -43,7 +43,7 @@ const Overview = () => {
 
             {/* 2. Main Visual Area (Map + Incidents) or (Finance Dashboard) */}
             {user.role === 'finance' ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', height: '600px' }}>
+                <div className="grid-desktop-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', height: '600px' }}>
                     {/* AI Insights Panel */}
                     <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
@@ -145,10 +145,10 @@ const Overview = () => {
                     </div>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', height: '600px' }}>
+                <div className="grid-desktop-2col" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', height: '600px' }}>
 
                     {/* Map Container */}
-                    <div className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <div className="card map-card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between' }}>
                             <h3 style={{ margin: 0 }}>Live Operations Map</h3>
                             <span style={{ fontSize: '0.875rem', color: 'var(--accent-admin)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
