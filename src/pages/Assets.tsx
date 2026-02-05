@@ -17,11 +17,16 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
     const [requestNotes, setRequestNotes] = useState('');
     const [requestLocation, setRequestLocation] = useState('');
     const [requestCapacity, setRequestCapacity] = useState('');
+    const [requestRoute, setRequestRoute] = useState('');
+    const [requestCost, setRequestCost] = useState('');
 
     // Add Asset Modal State (Admin)
     const [showAddAssetModal, setShowAddAssetModal] = useState(false);
     const [newAssetType, setNewAssetType] = useState('Truck');
     const [newAssetCode, setNewAssetCode] = useState(''); // Plate or ID
+    const [newAssetRoute, setNewAssetRoute] = useState('');
+    const [newAssetLocation, setNewAssetLocation] = useState('');
+    const [newAssetCost, setNewAssetCost] = useState('');
 
     // Truck Details Modal State
     const [selectedTruck, setSelectedTruck] = useState<any>(null);
@@ -38,7 +43,7 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
 
     const handleRequestSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const details = requestType === 'Bin' ? `Location: ${requestLocation}` : requestType === 'Truck' ? `Capacity: ${requestCapacity}` : '';
+        const details = requestType === 'Bin' ? `Location: ${requestLocation}, Cost: ${requestCost}` : requestType === 'Truck' ? `Capacity: ${requestCapacity}, Route: ${requestRoute}` : '';
 
         addRequest({
             id: `req-${Date.now()}`,
@@ -47,7 +52,11 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
             status: 'pending',
             date: new Date().toISOString().split('T')[0],
             requester: user?.name || 'Manager', // specific manager name
-            details: details
+            details: details,
+            route: requestRoute,
+            capacity: requestCapacity,
+            location: requestLocation,
+            cost: requestCost ? parseFloat(requestCost) : 0
         });
 
         alert(`Request Submitted to Admin`);
@@ -55,6 +64,8 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
         setRequestNotes('');
         setRequestLocation('');
         setRequestCapacity('');
+        setRequestRoute('');
+        setRequestCost('');
     };
 
     const handleAddAssetSubmit = (e: React.FormEvent) => {
@@ -71,7 +82,8 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                 driver: 'Unassigned',
                 plate: 'New',
                 capacity: 'N/A',
-                totalHours: 0
+                totalHours: 0,
+                route: newAssetRoute || 'Unassigned'
             });
         } else {
             addBin({
@@ -80,11 +92,16 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                 lng: 46.67,
                 fillLevel: 0,
                 status: 'active',
-                lastCollection: 'Just now'
+                lastCollection: 'Just now',
+                location: newAssetLocation || 'Unknown',
+                cost: newAssetCost ? parseFloat(newAssetCost) : 0
             });
         }
         setShowAddAssetModal(false);
         setNewAssetCode('');
+        setNewAssetRoute('');
+        setNewAssetLocation('');
+        setNewAssetCost('');
     };
 
     const StatsCard = ({ label, value, icon: Icon, color }: any) => (
@@ -264,6 +281,7 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                         <div>
                                             <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{truck.code}</h3>
                                             <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>{truck.type}</p>
+                                            <p style={{ margin: '0.25rem 0 0 0', color: 'var(--accent-admin)', fontSize: '0.75rem', fontWeight: 600 }}>Route: {truck.route || 'N/A'}</p>
                                         </div>
                                     </div>
 
@@ -324,7 +342,8 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                         </div>
                                         <div>
                                             <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Bin #{bin.id}</h3>
-                                            <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>IoT Enabled</p>
+                                            <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>{bin.location || 'IoT Enabled'}</p>
+                                            {bin.cost && <p style={{ margin: '0.25rem 0 0 0', color: 'var(--status-warning)', fontSize: '0.75rem' }}>Cost: {bin.cost} SAR</p>}
                                         </div>
                                     </div>
 
@@ -404,51 +423,97 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                             </div>
 
                             {requestType === 'Bin' && (
-                                <div style={{ marginBottom: '1rem', animation: 'fadeIn 0.3s' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Proposed Location</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <MapPin size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. King Fahd Rd, Sector 4"
-                                            value={requestLocation}
-                                            onChange={(e) => setRequestLocation(e.target.value)}
-                                            style={{
-                                                width: '100%',
-                                                padding: '0.75rem 0.75rem 0.75rem 2.5rem',
-                                                borderRadius: 'var(--radius-sm)',
-                                                background: 'var(--bg-main)',
-                                                border: '1px solid var(--glass-border)',
-                                                color: 'white'
-                                            }}
-                                            required
-                                        />
+                                <>
+                                    <div style={{ marginBottom: '1rem', animation: 'fadeIn 0.3s' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Proposed Location</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <MapPin size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. King Fahd Rd, Sector 4"
+                                                value={requestLocation}
+                                                onChange={(e) => setRequestLocation(e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    background: 'var(--bg-main)',
+                                                    border: '1px solid var(--glass-border)',
+                                                    color: 'white'
+                                                }}
+                                                required
+                                            />
+                                        </div>
                                     </div>
-                                </div>
+                                    <div style={{ marginBottom: '1rem', animation: 'fadeIn 0.3s' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Purchase Cost (SAR)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <CreditCard size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+                                            <input
+                                                type="number"
+                                                placeholder="e.g. 5000"
+                                                value={requestCost}
+                                                onChange={(e) => setRequestCost(e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    background: 'var(--bg-main)',
+                                                    border: '1px solid var(--glass-border)',
+                                                    color: 'white'
+                                                }}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                </>
                             )}
 
                             {requestType === 'Truck' && (
-                                <div style={{ marginBottom: '1rem', animation: 'fadeIn 0.3s' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Required Capacity</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <Gauge size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. 15 Tons"
-                                            value={requestCapacity}
-                                            onChange={(e) => setRequestCapacity(e.target.value)}
-                                            style={{
-                                                width: '100%',
-                                                padding: '0.75rem 0.75rem 0.75rem 2.5rem',
-                                                borderRadius: 'var(--radius-sm)',
-                                                background: 'var(--bg-main)',
-                                                border: '1px solid var(--glass-border)',
-                                                color: 'white'
-                                            }}
-                                            required
-                                        />
+                                <>
+                                    <div style={{ marginBottom: '1rem', animation: 'fadeIn 0.3s' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Required Capacity</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <Gauge size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. 15 Tons"
+                                                value={requestCapacity}
+                                                onChange={(e) => setRequestCapacity(e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    background: 'var(--bg-main)',
+                                                    border: '1px solid var(--glass-border)',
+                                                    color: 'white'
+                                                }}
+                                                required
+                                            />
+                                        </div>
                                     </div>
-                                </div>
+                                    <div style={{ marginBottom: '1rem', animation: 'fadeIn 0.3s' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Proposed Route</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <MapPin size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Route A"
+                                                value={requestRoute}
+                                                onChange={(e) => setRequestRoute(e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    background: 'var(--bg-main)',
+                                                    border: '1px solid var(--glass-border)',
+                                                    color: 'white'
+                                                }}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                </>
                             )}
 
                             <div style={{ marginBottom: '1.5rem' }}>
@@ -565,6 +630,68 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                     required
                                 />
                             </div>
+
+                            {newAssetType === 'Truck' && (
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Assigned Route</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Route A"
+                                        value={newAssetRoute}
+                                        onChange={(e) => setNewAssetRoute(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.75rem',
+                                            borderRadius: 'var(--radius-sm)',
+                                            background: 'var(--bg-main)',
+                                            border: '1px solid var(--glass-border)',
+                                            color: 'white'
+                                        }}
+                                        required
+                                    />
+                                </div>
+                            )}
+
+                            {newAssetType === 'Bin' && (
+                                <>
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Location Description</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Main Market, Corner 2"
+                                            value={newAssetLocation}
+                                            onChange={(e) => setNewAssetLocation(e.target.value)}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                borderRadius: 'var(--radius-sm)',
+                                                background: 'var(--bg-main)',
+                                                border: '1px solid var(--glass-border)',
+                                                color: 'white'
+                                            }}
+                                            required
+                                        />
+                                    </div>
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Purchase Cost (SAR)</label>
+                                        <input
+                                            type="number"
+                                            placeholder="e.g. 5000"
+                                            value={newAssetCost}
+                                            onChange={(e) => setNewAssetCost(e.target.value)}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                borderRadius: 'var(--radius-sm)',
+                                                background: 'var(--bg-main)',
+                                                border: '1px solid var(--glass-border)',
+                                                color: 'white'
+                                            }}
+                                            required
+                                        />
+                                    </div>
+                                </>
+                            )}
 
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
                                 <button
@@ -692,6 +819,12 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                         <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Last Service</div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}>
                                             <Calendar size={16} color="var(--text-tertiary)" /> {selectedTruck.lastService}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Route</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, color: 'var(--accent-admin)' }}>
+                                            <MapPin size={16} /> {selectedTruck.route || 'Unassigned'}
                                         </div>
                                     </div>
                                 </div>

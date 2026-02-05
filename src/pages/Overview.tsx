@@ -11,7 +11,10 @@ import { AlertTriangle, CheckCircle } from 'lucide-react';
 
 const Overview = () => {
     const { user } = useAuth();
-    const { requests, approveRequest } = useData();
+    const { requests, approveRequest, bins } = useData();
+
+    // Calculate total cost of smart bins
+    const totalBinCost = bins.reduce((sum, b) => sum + (b.cost || 0), 0);
 
     const stats = useMemo(() => {
         if (!user) return [];
@@ -83,46 +86,61 @@ const Overview = () => {
                         </div>
                     </div>
 
-                    {/* Facility Performance Table */}
-                    <div className="card">
-                        <h3 style={{ marginBottom: '1.5rem' }}>Facility Financial Performance</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {[
-                                { name: 'Recycling Unit', revenue: '8.4M', cost: '3.2M', profit: '5.2M', trend: 'up' },
-                                { name: 'Energy Plant', revenue: '18.2M', cost: '6.5M', profit: '11.7M', trend: 'up' },
-                                { name: 'Dump Yard', revenue: '0.5M', cost: '2.8M', profit: '-2.3M', trend: 'down' },
-                            ].map((f, i) => (
-                                <div key={i} style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: '2fr 1fr 1fr 1fr',
-                                    padding: '1rem',
-                                    background: 'var(--bg-main)',
-                                    borderRadius: '8px',
-                                    alignItems: 'center'
-                                }}>
-                                    <span style={{ fontWeight: 600 }}>{f.name}</span>
-                                    <div style={{ fontSize: '0.875rem' }}>
-                                        <div style={{ color: 'var(--text-tertiary)' }}>Rev</div>
-                                        <div style={{ color: 'var(--status-good)' }}>{f.revenue}</div>
+                    {/* Facility Performance Table & Asset Costs */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        {/* Asset Value Card */}
+                        <div className="card">
+                            <h3 style={{ marginBottom: '0.5rem' }}>Asset Inventory Value</h3>
+                            <p style={{ margin: '0 0 1rem 0', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Total investment in Smart Bins</p>
+                            <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                {totalBinCost.toLocaleString()} <span style={{ fontSize: '1rem', color: 'var(--text-tertiary)' }}>SAR</span>
+                            </div>
+                            <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--status-good)' }}>
+                                +{bins.length} Active Units
+                            </div>
+                        </div>
+
+                        {/* Facility Table */}
+                        <div className="card" style={{ flex: 1 }}>
+                            <h3 style={{ marginBottom: '1.5rem' }}>Facility Financial Performance</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {[
+                                    { name: 'Recycling Unit', revenue: '8.4M', cost: '3.2M', profit: '5.2M', trend: 'up' },
+                                    { name: 'Energy Plant', revenue: '18.2M', cost: '6.5M', profit: '11.7M', trend: 'up' },
+                                    { name: 'Dump Yard', revenue: '0.5M', cost: '2.8M', profit: '-2.3M', trend: 'down' },
+                                ].map((f, i) => (
+                                    <div key={i} style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                                        padding: '1rem',
+                                        background: 'var(--bg-main)',
+                                        borderRadius: '8px',
+                                        alignItems: 'center'
+                                    }}>
+                                        <span style={{ fontWeight: 600 }}>{f.name}</span>
+                                        <div style={{ fontSize: '0.875rem' }}>
+                                            <div style={{ color: 'var(--text-tertiary)' }}>Rev</div>
+                                            <div style={{ color: 'var(--status-good)' }}>{f.revenue}</div>
+                                        </div>
+                                        <div style={{ fontSize: '0.875rem' }}>
+                                            <div style={{ color: 'var(--text-tertiary)' }}>Cost</div>
+                                            <div style={{ color: 'var(--status-danger)' }}>{f.cost}</div>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{
+                                                padding: '0.25rem 0.5rem',
+                                                borderRadius: '4px',
+                                                background: f.profit.startsWith('-') ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+                                                color: f.profit.startsWith('-') ? 'var(--status-danger)' : 'var(--status-good)',
+                                                fontWeight: 600,
+                                                fontSize: '0.875rem'
+                                            }}>
+                                                {f.profit}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div style={{ fontSize: '0.875rem' }}>
-                                        <div style={{ color: 'var(--text-tertiary)' }}>Cost</div>
-                                        <div style={{ color: 'var(--status-danger)' }}>{f.cost}</div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <span style={{
-                                            padding: '0.25rem 0.5rem',
-                                            borderRadius: '4px',
-                                            background: f.profit.startsWith('-') ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-                                            color: f.profit.startsWith('-') ? 'var(--status-danger)' : 'var(--status-good)',
-                                            fontWeight: 600,
-                                            fontSize: '0.875rem'
-                                        }}>
-                                            {f.profit}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
