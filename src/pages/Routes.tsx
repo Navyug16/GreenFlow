@@ -142,7 +142,12 @@ const RoutesPage = () => {
                         if (dist < 0.002) {
                             if (bin.fillLevel > 5) {
                                 // EMPTY THE BIN!
-                                if (!activeNotification) setActiveNotification(`Collecting waste from ${bin.location || bin.id}...`);
+                                setSimulatedBins(current => current.map(b => b.id === bin.id ? { ...b, fillLevel: 0 } : b));
+                                if (!activeNotification) {
+                                    setActiveNotification(`${route.name} collecting waste from Bin ${bin.id}...`);
+                                    // Clear notification after 3 seconds to allow new ones
+                                    setTimeout(() => setActiveNotification(null), 3000);
+                                }
                                 return { ...bin, fillLevel: 0 };
                             }
                         } else {
