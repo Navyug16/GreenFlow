@@ -27,7 +27,7 @@ export interface Route {
 
 export interface Incident {
   id: string;
-  type: 'truck_failure' | 'bin_overflow' | 'facility_warning';
+  type: string;
   message: string;
   timestamp: string;
   severity: 'low' | 'medium' | 'high';

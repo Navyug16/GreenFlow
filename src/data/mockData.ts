@@ -3,28 +3,28 @@ import type { User, KpiStat, Incident, Facility } from '../types';
 export const CURRENT_USER: User = {
     id: 'u1',
     name: 'Navyug Galani',
-    role: 'admin', // Default to admin for demo
+    role: 'admin',
     avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024d'
 };
 
 export const ADMIN_STATS: KpiStat[] = [
     { label: 'Total Revenue', value: '4.2M', unit: 'SAR', change: 12, icon: 'DollarSign', color: 'var(--accent-finance)' },
-    { label: 'Active Trucks', value: 142, change: 5, icon: 'Truck', color: 'var(--accent-admin)' },
-    { label: 'Total Bins', value: '12,450', change: 0, icon: 'Trash2', color: 'var(--text-secondary)' },
-    { label: 'Total Drivers', value: 310, change: 2, icon: 'Users', color: 'var(--text-primary)' },
+    { label: 'Active Trucks', value: 8, change: 2, icon: 'Truck', color: 'var(--accent-admin)' }, // Updated from CSV count
+    { label: 'Total Bins', value: '15', change: 5, icon: 'Trash2', color: 'var(--text-secondary)' }, // Updated from CSV count
+    { label: 'Total Drivers', value: 8, change: 1, icon: 'Users', color: 'var(--text-primary)' },
     { label: 'Avg Bin Fill', value: 68, unit: '%', change: -4, icon: 'BarChart3', color: 'var(--accent-manager)' },
     { label: 'Avg Truck Fill', value: 82, unit: '%', change: 8, icon: 'Box', color: 'var(--accent-engineer)' },
 ];
 
 export const MANAGER_STATS: KpiStat[] = [
     { label: 'Waste Collected Today', value: '850', unit: 'Tons', change: 15, icon: 'Scale', color: 'var(--accent-manager)' },
-    { label: 'Active Routes', value: 45, change: 0, icon: 'Map', color: 'var(--accent-admin)' },
-    { label: 'Pending Requests', value: 12, change: -2, icon: 'AlertCircle', color: 'var(--accent-warning)' },
+    { label: 'Active Routes', value: 12, change: 3, icon: 'Map', color: 'var(--accent-admin)' },
+    { label: 'Pending Requests', value: 4, change: -1, icon: 'AlertCircle', color: 'var(--accent-warning)' },
 ];
 
 export const ENGINEER_STATS: KpiStat[] = [
-    { label: 'Trucks to Maintain', value: 3, change: 1, icon: 'Wrench', color: 'var(--accent-danger)' },
-    { label: 'Bins to Repair', value: 15, change: -5, icon: 'Hammer', color: 'var(--accent-warning)' },
+    { label: 'Trucks to Maintain', value: 1, change: 0, icon: 'Wrench', color: 'var(--accent-danger)' },
+    { label: 'Bins to Repair', value: 2, change: -1, icon: 'Hammer', color: 'var(--accent-warning)' },
     { label: 'Machinery Status', value: '98%', unit: 'Health', change: 0, icon: 'Activity', color: 'var(--status-good)' },
 ];
 
@@ -34,46 +34,21 @@ export const FINANCE_STATS: KpiStat[] = [
     { label: 'Recycling Output', value: '8.4M', unit: 'SAR', change: 24, icon: 'Recycle', color: 'var(--accent-manager)' },
 ];
 
+// Import from User CSV (Approximate mapping)
 export const RECENT_INCIDENTS: Incident[] = [
-    { id: 'i1', type: 'truck_failure', message: 'Truck T-104 engine overheating in Sector 4', timestamp: '10 min ago', severity: 'high', resolved: false },
-    { id: 'i2', type: 'bin_overflow', message: 'Smart Bin B-2292 disconnected from network', timestamp: '45 min ago', severity: 'medium', resolved: false },
-    { id: 'i3', type: 'facility_warning', message: 'Conveyor Belt C-2 maintenance due soon', timestamp: '2 hours ago', severity: 'low', resolved: true },
+    { id: 'i1', type: 'bin_overflow', message: 'Bin overflow detected (95% full) at Al Faisaliah Tower – Service Entrance', timestamp: '10 min ago', severity: 'high', resolved: false },
+    { id: 'i2', type: 'truck_delay', message: 'Collection truck delayed due to heavy traffic at Olaya Street near Kingdom Centre Tower', timestamp: '22 min ago', severity: 'medium', resolved: false },
+    { id: 'i3', type: 'sensor_failure', message: 'Smart bin sensor not responding at Al Malaz Park – Main Gate', timestamp: '45 min ago', severity: 'medium', resolved: false },
+    { id: 'i4', type: 'safety_alert', message: 'Fire risk alert from methane sensor at Riyadh Second Industrial City – Gate 1', timestamp: '1 hour ago', severity: 'high', resolved: true },
+    { id: 'i5', type: 'machinery_failure', message: 'Waste compactor malfunction at King Abdullah Park – South Entrance', timestamp: '2 hours ago', severity: 'high', resolved: false },
+    { id: 'i6', type: 'missed_pickup', message: 'Missed waste pickup complaint logged at Granada Mall – Public Parking Area', timestamp: '3 hours ago', severity: 'low', resolved: true },
+    { id: 'i7', type: 'high_load', message: 'High waste accumulation due to event at Riyadh Park Mall – North Entrance', timestamp: '5 hours ago', severity: 'medium', resolved: true },
 ];
 
-// User provided Facility
 export const FACILITIES: Facility[] = [
-    {
-        id: 'F1',
-        name: 'Recycling Unit',
-        type: 'recycle',
-        status: 'operational',
-        output: 450,
-        description: 'Recycles waste materials into reusable resources.'
-    },
-    {
-        id: 'F2',
-        name: 'Dump Yard',
-        type: 'dumpyard',
-        status: 'operational',
-        output: 1200,
-        description: 'Final disposal site for non-recyclable and non-energy waste.'
-    },
-    {
-        id: 'F3',
-        name: 'Energy Recovery Plant',
-        type: 'energy',
-        status: 'operational',
-        output: 850,
-        description: 'Generates renewable energy from waste processing.'
-    },
-];
-
-// Simple path for demo (Riyadh approx)
-export const DEMO_ROUTE: [number, number][] = [
-    [24.7136, 46.6753],
-    [24.7236, 46.6853],
-    [24.7336, 46.6953],
-    [24.7436, 46.7053],
+    { id: 'F1', name: 'Recycling Unit', type: 'recycle', status: 'operational', output: 450, description: 'Recycles waste materials into reusable resources.' },
+    { id: 'F2', name: 'Dump Yard', type: 'dumpyard', status: 'operational', output: 1200, description: 'Final disposal site for non-recyclable and non-energy waste.' },
+    { id: 'F3', name: 'Energy Recovery Plant', type: 'energy', status: 'operational', output: 850, description: 'Generates renewable energy from waste processing.' },
 ];
 
 export interface Bin {
@@ -83,66 +58,76 @@ export interface Bin {
     fillLevel: number; // 0-100
     status: 'active' | 'maintenance' | 'offline';
     lastCollection: string;
+    location?: string;
+    cost?: number;
+    route?: string;
 }
 
+// Imported Bins with approximate coordinates in Riyadh
 export const BINS: Bin[] = [
-    { id: 'B1', lat: 24.7136, lng: 46.6753, fillLevel: 85, status: 'active', lastCollection: '1 day ago' },
-    { id: 'B2', lat: 24.7200, lng: 46.7000, fillLevel: 60, status: 'active', lastCollection: '2 days ago' },
-    { id: 'B3', lat: 24.7300, lng: 46.6900, fillLevel: 95, status: 'active', lastCollection: '4 hours ago' },
-];
-
-export const TRUCK_ROUTES = [
-    // Route for Truck T1
-    {
-        id: 'T1',
-        name: 'Route T1 (Central)',
-        driver: 'Ahmed Khan',
-        vehicle: 'Mercedes Actros',
-        status: 'in_progress',
-        progress: 0,
-        efficiency: 94,
-        // Path: T1 -> B1 -> B3 -> F1
-        currentPath: [
-            [24.7100, 46.6800], // Start T1
-            [24.7118, 46.6776],
-            [24.7136, 46.6753], // B1
-            [24.7190, 46.6800],
-            [24.7245, 46.6850],
-            [24.7300, 46.6900], // B3
-            [24.7366, 46.7000],
-            [24.7433, 46.7100],
-            [24.7500, 46.7200]  // End F1
-        ] as [number, number][]
-    },
-    // Route for Truck T2
-    {
-        id: 'T2',
-        name: 'Route T2 (East)',
-        driver: 'John Smith',
-        vehicle: 'Volvo FMX',
-        status: 'optimizing',
-        progress: 0,
-        efficiency: 0,
-        // Path: T2 -> B2 -> F1
-        currentPath: [
-            [24.7350, 46.7050], // Start T2
-            [24.7300, 46.7033],
-            [24.7250, 46.7016],
-            [24.7200, 46.7000], // B2
-            [24.7300, 46.7066],
-            [24.7400, 46.7133],
-            [24.7500, 46.7200]  // End F1
-        ] as [number, number][]
-    }
+    { id: 'B-01', lat: 24.6905, lng: 46.6855, fillLevel: 45, status: 'active', lastCollection: '2 hours ago', location: 'Al Faisaliah Tower – Service Entrance', cost: 6800, route: 'Olaya Corridor' },
+    { id: 'B-02', lat: 24.6960, lng: 46.6810, fillLevel: 72, status: 'active', lastCollection: '4 hours ago', location: 'Olaya Street – Al Andalus Intersection', cost: 6200, route: 'Olaya Corridor' },
+    { id: 'B-03', lat: 24.7115, lng: 46.6745, fillLevel: 88, status: 'active', lastCollection: '1 day ago', location: 'Kingdom Centre Tower – Parking Access', cost: 7000, route: 'Olaya Corridor' },
+    { id: 'B-04', lat: 24.6655, lng: 46.7255, fillLevel: 25, status: 'active', lastCollection: '30 mins ago', location: 'Al Malaz Park – Main Gate', cost: 5200, route: 'Al Malaz Residential Route' },
+    { id: 'B-05', lat: 24.6700, lng: 46.7300, fillLevel: 60, status: 'active', lastCollection: '5 hours ago', location: 'Salahuddin Al Ayyubi Road – Residential Block', cost: 4800, route: 'Al Malaz Residential Route' },
+    { id: 'B-06', lat: 24.6600, lng: 46.7200, fillLevel: 35, status: 'active', lastCollection: '1 day ago', location: 'King Abdullah Park – South Entrance', cost: 5500, route: 'Al Malaz Residential Route' },
+    { id: 'B-07', lat: 24.6005, lng: 46.8005, fillLevel: 92, status: 'maintenance', lastCollection: '2 days ago', location: 'Riyadh Second Industrial City – Gate 1', cost: 7500, route: 'Industrial Area Route' },
+    { id: 'B-08', lat: 24.5950, lng: 46.8050, fillLevel: 80, status: 'active', lastCollection: '6 hours ago', location: 'Al Kharj Road – Industrial Transfer Point', cost: 6900, route: 'Industrial Area Route' },
+    { id: 'B-09', lat: 24.9505, lng: 46.7005, fillLevel: 15, status: 'active', lastCollection: '10 mins ago', location: 'King Khalid International Airport – Terminal 5 Drop Zone', cost: 8200, route: 'Airport & Logistics Corridor' },
+    { id: 'B-10', lat: 24.9450, lng: 46.6950, fillLevel: 40, status: 'active', lastCollection: '1 hour ago', location: 'Airport Road – Cargo Village Access', cost: 7800, route: 'Airport & Logistics Corridor' },
+    { id: 'B-11', lat: 24.7555, lng: 46.6305, fillLevel: 65, status: 'active', lastCollection: '3 hours ago', location: 'Riyadh Park Mall – North Entrance', cost: 6700, route: 'Northern Commercial Zone' },
+    { id: 'B-12', lat: 24.7600, lng: 46.6350, fillLevel: 55, status: 'active', lastCollection: '4 hours ago', location: 'IKEA Riyadh – Loading Bay Area', cost: 6300, route: 'Northern Commercial Zone' },
+    { id: 'B-13', lat: 24.7700, lng: 46.7800, fillLevel: 30, status: 'active', lastCollection: '1 day ago', location: 'Al Nahda District – Community Center', cost: 4600, route: 'Eastern Residential Expansion' },
+    { id: 'B-14', lat: 24.7850, lng: 46.7400, fillLevel: 75, status: 'active', lastCollection: '5 hours ago', location: 'Granada Mall – Public Parking Area', cost: 6400, route: 'Eastern Residential Expansion' },
+    { id: 'B-15', lat: 24.6805, lng: 46.6205, fillLevel: 20, status: 'active', lastCollection: '2 hours ago', location: 'Diplomatic Quarter – Main Gate Bus Stop', cost: 5900, route: 'Government & Office Zone' },
 ];
 
 export const REQUESTS = [
-    { id: 'req1', type: 'Truck', notes: 'Need additional compactor for Sector 7', status: 'pending', date: '2026-01-15', requester: 'West Manager' },
-    { id: 'req2', type: 'Bin', notes: 'Replacement for damaged bin B-105', status: 'approved', date: '2026-01-14', requester: 'West Manager' },
+    { id: 'req1', type: 'Truck', notes: 'Need additional compactor for Sector 7', status: 'pending', date: '2026-02-04', requester: 'West Manager', details: 'High volume expected next month' },
+    { id: 'req2', type: 'Bin', notes: 'Replacement for damaged bin B-04', status: 'approved', date: '2026-02-03', requester: 'Maintenance Team', details: 'Sensor malfunction' },
+    { id: 'req3', type: 'Bin', notes: 'New bin request for Diplomatic Quarter ext', status: 'pending', date: '2026-02-05', requester: 'City Planning', details: 'New park opening' },
 ];
 
 export const TRUCKS = [
-    { id: 'T1', code: 'T-101', type: 'Compactor', status: 'active', fuel: 75, mileage: 12500, lastService: '2025-12-10', driver: 'Ahmed Khan', plate: 'KSA 1234', capacity: '15 Tons', totalHours: 4500 },
-    { id: 'T2', code: 'T-205', type: 'Dump Truck', status: 'active', fuel: 60, mileage: 8200, lastService: '2026-01-05', driver: 'John Smith', plate: 'KSA 5678', capacity: '20 Tons', totalHours: 3200 },
-    { id: 'T3', code: 'T-308', type: 'Recycling Unit', status: 'maintenance', fuel: 0, mileage: 15400, lastService: '2025-11-20', driver: 'Unassigned', plate: 'KSA 9012', capacity: '10 Tons', totalHours: 5100 },
+    { id: '1', code: 'T-01', plate: 'T-01', driver: 'Mohammed Al-Salem', type: 'Compactor', route: 'Al Faisaliah -> Kingdom Centre', status: 'active', fuel: 72, mileage: 12500, lastService: '2026-01-10', capacity: '15 Tons', totalHours: 4200 },
+    { id: '2', code: 'T-02', plate: 'T-02', driver: 'Ajay Kumar', type: 'Pickup', route: 'Al Malaz Park Area', status: 'active', fuel: 65, mileage: 8100, lastService: '2026-01-15', capacity: '5 Tons', totalHours: 2100 },
+    { id: '3', code: 'T-03', plate: 'T-03', driver: 'Faisal Al-Harbi', type: 'Medium Compactor', route: 'Second Industrial City', status: 'maintenance', fuel: 10, mileage: 14200, lastService: '2025-12-20', capacity: '10 Tons', totalHours: 3800 },
+    { id: '4', code: 'T-04', plate: 'T-04', driver: 'Ahmed Hassan', type: 'Pickup', route: 'King Khalid Airport', status: 'active', fuel: 88, mileage: 5600, lastService: '2026-01-25', capacity: '5 Tons', totalHours: 1500 },
+    { id: '5', code: 'T-05', plate: 'T-05', driver: 'Abdul Rehman', type: 'Large Compactor', route: 'Riyadh Park Mall', status: 'active', fuel: 45, mileage: 18900, lastService: '2026-01-05', capacity: '20 Tons', totalHours: 5600 },
+    { id: '6', code: 'T-06', plate: 'T-06', driver: 'Salman Khan', type: 'Hook Loader', route: 'Al Nahda District', status: 'active', fuel: 55, mileage: 9800, lastService: '2026-01-18', capacity: '12 Tons', totalHours: 3100 },
+    { id: '7', code: 'T-07', plate: 'T-07', driver: 'Farukh Saikh', type: 'Pickup', route: 'Ministry of Interior HQ', status: 'active', fuel: 80, mileage: 6700, lastService: '2026-01-22', capacity: '5 Tons', totalHours: 1900 },
+];
+
+// Simplified Route Data for Demo visualization (connecting some bin points)
+export const TRUCK_ROUTES = [
+    {
+        id: 'T1',
+        name: 'Olaya Corridor Route',
+        driver: 'Mohammed Al-Salem',
+        vehicle: 'Compactor T-01',
+        status: 'in_progress',
+        progress: 45,
+        efficiency: 94,
+        currentPath: [
+            [24.6905, 46.6855], // B-01
+            [24.6930, 46.6830],
+            [24.6960, 46.6810], // B-02
+            [24.7000, 46.6780],
+            [24.7115, 46.6745]  // B-03
+        ] as [number, number][]
+    },
+    {
+        id: 'T5',
+        name: 'Northern Commercial Route',
+        driver: 'Abdul Rehman',
+        vehicle: 'Large Compactor T-05',
+        status: 'optimizing',
+        progress: 10,
+        efficiency: 88,
+        currentPath: [
+            [24.7555, 46.6305], // B-11
+            [24.7580, 46.6325],
+            [24.7600, 46.6350]  // B-12
+        ] as [number, number][]
+    }
 ];
