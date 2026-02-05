@@ -1,22 +1,23 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { TRUCKS as INITIAL_TRUCKS, BINS as INITIAL_BINS, REQUESTS as INITIAL_REQUESTS, RECENT_INCIDENTS as INITIAL_INCIDENTS } from '../data/mockData';
-import type { Incident } from '../types';
+import { TRUCKS as INITIAL_TRUCKS, BINS as INITIAL_BINS, REQUESTS as INITIAL_REQUESTS, RECENT_INCIDENTS as INITIAL_INCIDENTS, FACILITIES as INITIAL_FACILITIES } from '../data/mockData';
+import type { Incident, Facility, Truck, Bin, Request } from '../types';
 import { db } from '../lib/firebase';
 import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 
 // Define types
-interface Truck { id: string; code: string; type: string; status: string; fuel: number; mileage: number; lastService: string; driver?: string; plate?: string; capacity?: string; totalHours?: number; route?: string; }
-interface Bin { id: string; lat: number; lng: number; fillLevel: number; status: string; lastCollection: string; location?: string; cost?: number; }
-interface Request { id: string; type: string; notes: string; status: string; date: string; requester: string; details?: string; route?: string; location?: string; cost?: number; capacity?: string; }
+// Define types removed to use imported types
+
 
 interface DataContextType {
     trucks: Truck[];
     bins: Bin[];
+    facilities: Facility[];
     requests: Request[];
     incidents: Incident[];
     addTruck: (truck: Truck) => void;
     addBin: (bin: Bin) => void;
     updateBin: (id: string, updates: Partial<Bin>) => void;
+    updateFacility: (id: string, updates: Partial<Facility>) => void;
     addRequest: (request: Request) => void;
     approveRequest: (id: string) => void;
     rejectRequest: (id: string) => void;
@@ -29,6 +30,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     // Initial state is mock data by default
     const [trucks, setTrucks] = useState<Truck[]>(INITIAL_TRUCKS);
     const [bins, setBins] = useState<Bin[]>(INITIAL_BINS);
+    const [facilities, setFacilities] = useState<Facility[]>(INITIAL_FACILITIES);
     const [requests, setRequests] = useState<Request[]>(INITIAL_REQUESTS);
     const [incidents, setIncidents] = useState<Incident[]>(INITIAL_INCIDENTS);
 
@@ -40,12 +42,21 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
         const unsubTrucks = onSnapshot(collection(db, 'trucks'), (snap) => {
             const data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Truck));
-            if (data.length > 0) setTrucks(data);
+            // Merge Mock + DB
+            const merged: Truck[] = [...INITIAL_TRUCKS];
+            data.forEach(d => {
+                if (!merged.find(m => m.id === d.id)) merged.push(d);
+            });
+            setTrucks(merged);
         });
 
         const unsubBins = onSnapshot(collection(db, 'bins'), (snap) => {
             const data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Bin));
-            if (data.length > 0) setBins(data);
+            const merged: Bin[] = [...INITIAL_BINS];
+            data.forEach(d => {
+                if (!merged.find(m => m.id === d.id)) merged.push(d);
+            });
+            setBins(merged);
         });
 
         const unsubRequests = onSnapshot(collection(db, 'requests'), (snap) => {
@@ -100,6 +111,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             }
         } else {
             setBins(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
+        }
+    };
+
+    const updateFacility = async (id: string, updates: Partial<Facility>) => {
+        if (db) {
+            try {
+                await updateDoc(doc(db, 'facilities', id), updates);
+            } catch (e) {
+                console.error("Error updating facility", e);
+            }
+        } else {
+            setFacilities(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
         }
     };
 
@@ -184,7 +207,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <DataContext.Provider value={{ trucks, bins, requests, incidents, addTruck, addBin, updateBin, addRequest, approveRequest, rejectRequest, resolveIncident }}>
+        <DataContext.Provider value={{ trucks, bins, facilities, requests, incidents, addTruck, addBin, updateBin, updateFacility, addRequest, approveRequest, rejectRequest, resolveIncident }}>
             {children}
         </DataContext.Provider>
     );

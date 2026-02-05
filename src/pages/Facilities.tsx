@@ -1,12 +1,11 @@
 import { Factory, Zap, Trash2, Activity, AlertTriangle } from 'lucide-react';
-import { FACILITIES } from '../data/mockData';
+import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 
 const FacilitiesPage = () => {
     const { user } = useAuth();
 
-    // In a real app, this should come from context/state
-    const facilities = FACILITIES;
+    const { facilities } = useData();
 
     const getIcon = (type: string) => {
         switch (type) {

@@ -42,3 +42,43 @@ export interface Facility {
   output: number; // e.g., KW or Tons
   description?: string;
 }
+
+export interface Truck {
+  id: string;
+  code: string;
+  type: string;
+  status: string;
+  fuel: number;
+  mileage: number;
+  lastService: string;
+  driver?: string;
+  plate?: string;
+  capacity?: string;
+  totalHours?: number;
+  route?: string;
+}
+
+export interface Bin {
+  id: string;
+  lat: number;
+  lng: number;
+  fillLevel: number;
+  status: string;
+  lastCollection: string;
+  location?: string;
+  cost?: number;
+}
+
+export interface Request {
+  id: string;
+  type: string;
+  notes: string;
+  status: string;
+  date: string;
+  requester: string;
+  details?: string;
+  route?: string;
+  location?: string;
+  cost?: number;
+  capacity?: string;
+}
