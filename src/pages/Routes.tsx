@@ -1,23 +1,39 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker } from 'react-leaflet';
-import { Icon } from 'leaflet';
+import { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Brain, Fuel, TrendingUp, Truck } from 'lucide-react';
 import { TRUCK_ROUTES } from '../data/mockData';
 import { useData } from '../context/DataContext';
 
 // Custom Icons
-const truckIcon = new Icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/2554/2554936.png', // Placeholder truck icon
-    iconSize: [32, 32],
-    className: 'filter-white'
+// Custom Icons
+// Custom Icons
+const truckIcon = new DivIcon({
+    html: `<div style="
+        background-color: #10B981; 
+        width: 36px; 
+        height: 36px; 
+        border-radius: 50%; 
+        border: 2px solid white; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        font-size: 20px;">
+        🚚
+    </div>`,
+    className: 'custom-truck-icon',
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+    popupAnchor: [0, -18]
 });
 
 const RoutesPage = () => {
     const { bins } = useData();
     const [optimizing, setOptimizing] = useState(false);
     const [routes, setRoutes] = useState(TRUCK_ROUTES);
-    const [selectedRoute, setSelectedRoute] = useState<string | null>(TRUCK_ROUTES[0].id);
+    const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
 
     // Fetch real road geometry from OSRM
@@ -42,32 +58,42 @@ const RoutesPage = () => {
         };
 
         const updateRoutes = async () => {
-            // Define strict stops for our demo routes (Start -> Bins -> Facility)
-            // Route T1: Start -> B1 -> B3 -> F1 (Dump Yard)
-            const t1Waypoints: [number, number][] = [
-                [24.7100, 46.6800], // Depot/Start
-                [24.7136, 46.6753], // B1
-                [24.7300, 46.6900], // B3
-                [24.7500, 46.7200]  // F1
-            ];
-
-            // Route T2: Start -> B2 -> F1
-            const t2Waypoints: [number, number][] = [
-                [24.7350, 46.7050], // Depot/Start
-                [24.7200, 46.7000], // B2
-                [24.7500, 46.7200]  // F1
-            ];
-
+            // Update T1 (Olaya)
+            const t1Waypoints: [number, number][] = [[24.6850, 46.6900], [24.6905, 46.6855], [24.7115, 46.6745], [24.7200, 46.6700]];
             const t1Path = await fetchRouteGeometry(t1Waypoints);
+
+            // Update T2 (Al Malaz)
+            const t2Waypoints: [number, number][] = [[24.6650, 46.7300], [24.6655, 46.7255], [24.6600, 46.7200], [24.6620, 46.7150]];
             const t2Path = await fetchRouteGeometry(t2Waypoints);
 
-            if (t1Path || t2Path) {
-                setRoutes(prev => prev.map(r => {
-                    if (r.id === 'T1' && t1Path) return { ...r, currentPath: t1Path };
-                    if (r.id === 'T2' && t2Path) return { ...r, currentPath: t2Path };
-                    return r;
-                }));
-            }
+            // Update T5 (North Commercial)
+            const t5Waypoints: [number, number][] = [[24.7500, 46.6250], [24.7555, 46.6305], [24.7600, 46.6350], [24.7650, 46.6400]];
+            const t5Path = await fetchRouteGeometry(t5Waypoints);
+
+            // For others, we can use simple straight lines or add more waypoints later if needed, 
+            // but let's try to fetch at least a simple valid path for them based on their mockData currentPath start/end
+            const fetchAndSet = async (id: string, start: [number, number], end: [number, number]) => {
+                const path = await fetchRouteGeometry([start, end]);
+                return { id, path };
+            };
+
+            const otherRoutes = await Promise.all([
+                fetchAndSet('T3', [24.6005, 46.8005], [24.5950, 46.8050]), // Industrial
+                fetchAndSet('T4', [24.9505, 46.7005], [24.9450, 46.6950]), // Airport
+                fetchAndSet('T6', [24.7700, 46.7800], [24.7850, 46.7400]), // Nahda
+                fetchAndSet('T7', [24.6805, 46.6205], [24.6700, 46.6300]), // Ministry
+            ]);
+
+            setRoutes(prev => prev.map(r => {
+                if (r.id === 'T1' && t1Path) return { ...r, currentPath: t1Path };
+                if (r.id === 'T2' && t2Path) return { ...r, currentPath: t2Path };
+                if (r.id === 'T5' && t5Path) return { ...r, currentPath: t5Path };
+
+                const other = otherRoutes.find(o => o.id === r.id);
+                if (other && other.path) return { ...r, currentPath: other.path };
+
+                return r;
+            }));
         };
 
         updateRoutes();
@@ -82,16 +108,30 @@ const RoutesPage = () => {
         }, 3000);
     };
 
-    // Animation Loop
+    // Animation Loop with "Waste Drop" Simulation
+    const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
     useEffect(() => {
         let animationFrameId: number;
         let startTime: number;
-        const duration = 15000; // 15 seconds per loop
+        const duration = 20000; // 20 seconds for full route cycle
 
         const animate = (time: number) => {
             if (!startTime) startTime = time;
             const elapsed = time - startTime;
             const newProgress = (elapsed % duration) / duration;
+
+            // Simulation Logic:
+            // 0.0 - 0.1: Leaving Depot
+            // 0.1 - 0.8: Collecting Waste (Bins)
+            // 0.8 - 0.99: Going to Facility (Full)
+            // 1.0 (Loop): Dump & Reset
+
+            if (newProgress > 0.98 && newProgress < 0.99) {
+                if (!statusMessage) setStatusMessage("Truck arriving at Recycling Facility...");
+            } else if (newProgress < 0.02) {
+                setStatusMessage(null); // Reset
+            }
 
             setProgress(newProgress);
             animationFrameId = requestAnimationFrame(animate);
@@ -100,7 +140,7 @@ const RoutesPage = () => {
         animationFrameId = requestAnimationFrame(animate);
 
         return () => cancelAnimationFrame(animationFrameId);
-    }, []);
+    }, [statusMessage]);
 
     // ... handleOptimize function ...
 
@@ -258,76 +298,91 @@ const RoutesPage = () => {
                     </div>
                 </div>
 
-                <MapContainer center={[24.72, 46.68]} zoom={13} style={{ height: '100%', width: '100%' }}>
-                    <TileLayer
-                        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                        attribution='&copy; CARTO'
-                    />
+                {statusMessage && (
+                    <div style={{
+                        marginTop: '0.5rem',
+                        padding: '0.5rem',
+                        background: 'rgba(34, 197, 94, 0.2)',
+                        border: '1px solid var(--status-good)',
+                        borderRadius: '4px',
+                        color: 'var(--status-good)',
+                        fontWeight: 600,
+                        animation: 'pulse 1s infinite'
+                    }}>
+                        {statusMessage}
+                    </div>
+                )}
+            </div>
 
-                    {/* Render Bins */}
-                    {bins.map(bin => (
-                        <CircleMarker
-                            key={bin.id}
-                            center={[bin.lat, bin.lng]}
-                            radius={6}
-                            fillColor={bin.fillLevel > 90 ? 'var(--status-danger)' : bin.fillLevel > 75 ? 'var(--status-warning)' : 'var(--status-good)'}
-                            color="white"
-                            weight={2}
-                            fillOpacity={1}
-                        >
-                            <Popup className="custom-popup">
-                                <div style={{ color: 'var(--bg-main)' }}>
-                                    <strong>Bin #{bin.id}</strong><br />
-                                    Level: {bin.fillLevel}%<br />
-                                    Last: {bin.lastCollection}
-                                </div>
-                            </Popup>
-                        </CircleMarker>
-                    ))}
+            <MapContainer center={[24.72, 46.68]} zoom={13} style={{ height: '100%', width: '100%' }}>
+                <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    attribution='&copy; CARTO'
+                />
 
-                    {/* Render Routes */}
-                    {routes.map(route => {
-                        if (!route.currentPath || route.currentPath.length < 2) return null;
-                        const isActive = selectedRoute === route.id;
-                        const currentPos = getPosition(route.currentPath, progress);
+                {/* Render Bins */}
+                {bins.map(bin => (
+                    <CircleMarker
+                        key={bin.id}
+                        center={[bin.lat, bin.lng]}
+                        radius={6}
+                        fillColor={bin.fillLevel > 90 ? 'var(--status-danger)' : bin.fillLevel > 75 ? 'var(--status-warning)' : 'var(--status-good)'}
+                        color="white"
+                        weight={2}
+                        fillOpacity={1}
+                    >
+                        <Popup className="custom-popup">
+                            <div style={{ color: 'var(--bg-main)' }}>
+                                <strong>Bin #{bin.id}</strong><br />
+                                Level: {bin.fillLevel}%<br />
+                                Last: {bin.lastCollection}
+                            </div>
+                        </Popup>
+                    </CircleMarker>
+                ))}
 
-                        return (
-                            <div key={route.id}>
-                                {/* Outer Glow / Border for Active Route */}
-                                {isActive && (
-                                    <Polyline
-                                        positions={route.currentPath}
-                                        color="var(--accent-admin)"
-                                        weight={8}
-                                        opacity={0.3}
-                                    />
-                                )}
+                {/* Render Routes */}
+                {routes.map(route => {
+                    if (selectedRoute && selectedRoute !== route.id) return null; // Hide others if one is selected
+                    if (!route.currentPath || route.currentPath.length < 2) return null;
 
-                                {/* Main Path */}
+                    const isActive = selectedRoute === route.id;
+                    const currentPos = getPosition(route.currentPath, progress);
+
+                    return (
+                        <div key={route.id}>
+                            {/* Outer Glow / Border for Active Route */}
+                            {isActive && (
                                 <Polyline
                                     positions={route.currentPath}
-                                    color={isActive ? 'var(--accent-admin)' : 'rgba(255,255,255,0.1)'}
-                                    weight={isActive ? 4 : 2}
-                                    dashArray={isActive ? undefined : '5, 10'}
+                                    color="var(--accent-admin)"
+                                    weight={8}
+                                    opacity={0.3}
                                 />
+                            )}
 
-                                {/* Animated Truck Marker */}
-                                {isActive && (
-                                    <Marker position={currentPos} icon={truckIcon}>
-                                        <Popup>
-                                            <div style={{ color: 'var(--bg-main)' }}>
-                                                <strong>{route.name}</strong><br />
-                                                Driver: {route.driver}<br />
-                                                Speed: 45 km/h
-                                            </div>
-                                        </Popup>
-                                    </Marker>
-                                )}
-                            </div>
-                        );
-                    })}
-                </MapContainer>
-            </div>
+                            {/* Main Path */}
+                            <Polyline
+                                positions={route.currentPath}
+                                color={isActive ? 'var(--accent-admin)' : 'rgba(255,255,255,0.2)'}
+                                weight={isActive ? 4 : 3}
+                                dashArray={isActive ? undefined : '5, 10'}
+                            />
+
+                            {/* Animated Truck Marker */}
+                            <Marker position={currentPos} icon={truckIcon}>
+                                <Popup>
+                                    <div style={{ color: 'var(--bg-main)' }}>
+                                        <strong>{route.name}</strong><br />
+                                        Driver: {route.driver}<br />
+                                        Speed: 45 km/h
+                                    </div>
+                                </Popup>
+                            </Marker>
+                        </div>
+                    );
+                })}
+            </MapContainer>
         </div>
     );
 };

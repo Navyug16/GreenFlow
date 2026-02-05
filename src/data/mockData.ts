@@ -99,35 +99,76 @@ export const TRUCKS = [
 ];
 
 // Simplified Route Data for Demo visualization (connecting some bin points)
+// Full Route Data for all 7 Trucks
 export const TRUCK_ROUTES = [
     {
         id: 'T1',
-        name: 'Olaya Corridor Route',
+        name: 'Olaya Corridor',
         driver: 'Mohammed Al-Salem',
         vehicle: 'Compactor T-01',
         status: 'in_progress',
         progress: 45,
         efficiency: 94,
-        currentPath: [
-            [24.6905, 46.6855], // B-01
-            [24.6930, 46.6830],
-            [24.6960, 46.6810], // B-02
-            [24.7000, 46.6780],
-            [24.7115, 46.6745]  // B-03
-        ] as [number, number][]
+        currentPath: [[24.6905, 46.6855], [24.7115, 46.6745]] as [number, number][]
+    },
+    {
+        id: 'T2',
+        name: 'Al Malaz Park',
+        driver: 'Ajay Kumar',
+        vehicle: 'Pickup T-02',
+        status: 'active',
+        progress: 20,
+        efficiency: 89,
+        currentPath: [[24.6655, 46.7255], [24.6600, 46.7200]] as [number, number][]
+    },
+    {
+        id: 'T3',
+        name: 'Industrial City',
+        driver: 'Faisal Al-Harbi',
+        vehicle: 'Compactor T-03',
+        status: 'maintenance',
+        progress: 0,
+        efficiency: 10,
+        currentPath: [[24.6005, 46.8005], [24.5950, 46.8050]] as [number, number][]
+    },
+    {
+        id: 'T4',
+        name: 'Airport Logistics',
+        driver: 'Ahmed Hassan',
+        vehicle: 'Pickup T-04',
+        status: 'active',
+        progress: 60,
+        efficiency: 92,
+        currentPath: [[24.9505, 46.7005], [24.9450, 46.6950]] as [number, number][]
     },
     {
         id: 'T5',
-        name: 'Northern Commercial Route',
+        name: 'Northern Commercial',
         driver: 'Abdul Rehman',
         vehicle: 'Large Compactor T-05',
-        status: 'optimizing',
+        status: 'active',
         progress: 10,
         efficiency: 88,
-        currentPath: [
-            [24.7555, 46.6305], // B-11
-            [24.7580, 46.6325],
-            [24.7600, 46.6350]  // B-12
-        ] as [number, number][]
+        currentPath: [[24.7555, 46.6305], [24.7600, 46.6350]] as [number, number][]
+    },
+    {
+        id: 'T6',
+        name: 'Al Nahda Dist',
+        driver: 'Salman Khan',
+        vehicle: 'Hook Loader T-06',
+        status: 'active',
+        progress: 35,
+        efficiency: 85,
+        currentPath: [[24.7700, 46.7800], [24.7850, 46.7400]] as [number, number][]
+    },
+    {
+        id: 'T7',
+        name: 'Ministry HQ',
+        driver: 'Farukh Saikh',
+        vehicle: 'Pickup T-07',
+        status: 'active',
+        progress: 80,
+        efficiency: 95,
+        currentPath: [[24.6805, 46.6205], [24.6700, 46.6300]] as [number, number][]
     }
 ];
