@@ -2,9 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard, Map, Truck, Factory, AlertTriangle,
-    Camera, Users, Trash2, Wrench, Settings, LogOut
+    Camera, Users, Trash2, Wrench, LogOut
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+import logo from '../assets/logo.png';
 
 const Sidebar = () => {
     const { user, logout } = useAuth();
@@ -68,13 +70,8 @@ const Sidebar = () => {
             padding: '1.5rem',
             zIndex: 50
         }}>
-            <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--accent-admin)', display: 'grid', placeItems: 'center' }}>
-                    <Settings size={20} color="white" />
-                </div>
-                <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 700, letterSpacing: '-0.03em' }}>
-                    Green<span style={{ color: 'var(--accent-admin)' }}>Flow</span>
-                </h2>
+            <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img src={logo} alt="GreenFlow Logo" style={{ height: '40px' }} />
             </div>
 
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
