@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import { TRUCKS as INITIAL_TRUCKS, BINS as INITIAL_BINS, REQUESTS as INITIAL_REQUESTS, RECENT_INCIDENTS as INITIAL_INCIDENTS, FACILITIES as INITIAL_FACILITIES } from '../data/mockData';
 import type { Incident, Facility, Truck, Bin, Request } from '../types';
 import { db } from '../lib/firebase';
-import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, writeBatch } from 'firebase/firestore';
 
 // Define types
 // Define types removed to use imported types
@@ -20,6 +20,7 @@ interface DataContextType {
     deleteBin: (id: string) => void;
     updateBin: (id: string, updates: Partial<Bin>) => void;
     updateFacility: (id: string, updates: Partial<Facility>) => void;
+    seedDatabase: () => Promise<void>;
     addRequest: (request: Request) => void;
     approveRequest: (id: string) => void;
     rejectRequest: (id: string) => void;
@@ -152,6 +153,36 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const seedDatabase = async () => {
+        if (!db) {
+            alert("Database not connected. Check .env config.");
+            return;
+        }
+        if (!confirm("Overwrite database with initial Mock Data? This cannot be undone.")) return;
+
+        try {
+            const batch = writeBatch(db);
+
+            // Seed Trucks
+            INITIAL_TRUCKS.forEach(t => batch.set(doc(db, 'trucks', t.id), t));
+            // Seed Bins
+            INITIAL_BINS.forEach(b => batch.set(doc(db, 'bins', b.id), b));
+            // Seed Facilities
+            INITIAL_FACILITIES.forEach(f => batch.set(doc(db, 'facilities', f.id), f));
+
+            // Seed Requests & Incidents (Optional, but good for demo)
+            INITIAL_REQUESTS.forEach(r => batch.set(doc(db, 'requests', r.id), r));
+            INITIAL_INCIDENTS.forEach(i => batch.set(doc(db, 'incidents', i.id), i));
+
+            await batch.commit();
+            console.log("Database seeded successfully");
+            alert("Database seeded successfully!");
+        } catch (e) {
+            console.error("Error seeding database", e);
+            alert("Error seeding database check console.");
+        }
+    };
+
     const addRequest = async (request: Request) => {
         if (db) {
             try {
@@ -233,7 +264,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <DataContext.Provider value={{ trucks, bins, facilities, requests, incidents, addTruck, deleteTruck, addBin, deleteBin, updateBin, updateFacility, addRequest, approveRequest, rejectRequest, resolveIncident }}>
+        <DataContext.Provider value={{ trucks, bins, facilities, requests, incidents, addTruck, deleteTruck, addBin, deleteBin, updateBin, updateFacility, seedDatabase, addRequest, approveRequest, rejectRequest, resolveIncident }}>
             {children}
         </DataContext.Provider>
     );
