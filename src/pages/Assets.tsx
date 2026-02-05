@@ -28,8 +28,9 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
     const [newAssetLocation, setNewAssetLocation] = useState('');
     const [newAssetCost, setNewAssetCost] = useState('');
 
-    // Truck Details Modal State
+    // Truck/Bin Details Modal State
     const [selectedTruck, setSelectedTruck] = useState<any>(null);
+    const [selectedBin, setSelectedBin] = useState<any>(null);
 
     const filteredTrucks = trucks.filter(t =>
         (filterStatus === 'all' || t.status === filterStatus) &&
@@ -323,13 +324,21 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                         ))
                     ) : (
                         filteredBins.map(bin => (
-                            <div key={bin.id} style={{
-                                background: 'var(--bg-main)',
-                                borderRadius: '12px',
-                                padding: '1.5rem',
-                                border: '1px solid var(--glass-border)',
-                                position: 'relative'
-                            }}>
+                            <div
+                                key={bin.id}
+                                onClick={() => setSelectedBin(bin)}
+                                style={{
+                                    background: 'var(--bg-main)',
+                                    borderRadius: '12px',
+                                    padding: '1.5rem',
+                                    border: '1px solid var(--glass-border)',
+                                    position: 'relative',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                            >
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{
@@ -372,6 +381,10 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                             transition: 'width 0.5s ease'
                                         }} />
                                     </div>
+                                </div>
+
+                                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--accent-manager)', fontSize: '0.875rem', fontWeight: 500 }}>
+                                    View Full Details <ChevronRight size={16} />
                                 </div>
                             </div>
                         ))
@@ -834,6 +847,110 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                         <div style={{ padding: '1.5rem', background: 'var(--bg-main)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
                             <button style={{ padding: '0.75rem 1.5rem', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--accent-admin)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>View Maintenance Log</button>
                             <button onClick={() => setSelectedTruck(null)} style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-admin)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Bin Details Modal */}
+            {selectedBin && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.8)',
+                    backdropFilter: 'blur(5px)',
+                    zIndex: 1100,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <div className="card" style={{ width: '500px', padding: '0', overflow: 'hidden', animation: 'scaleUp 0.3s ease' }}>
+                        <div style={{
+                            background: 'linear-gradient(to right, var(--bg-panel), var(--bg-main))',
+                            padding: '1.5rem',
+                            borderBottom: '1px solid var(--glass-border)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'start'
+                        }}>
+                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                <div style={{ padding: '0.75rem', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '12px', color: 'var(--accent-manager)' }}>
+                                    <Trash2 size={32} />
+                                </div>
+                                <div>
+                                    <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Bin #{selectedBin.id}</h2>
+                                    <p style={{ margin: 0, color: 'var(--text-tertiary)' }}>IoT Enabled Smart Bin</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setSelectedBin(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={24} /></button>
+                        </div>
+
+                        <div style={{ padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                            <div>
+                                <h4 style={{ color: 'var(--text-tertiary)', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Status & Location</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Current Status</div>
+                                        <div style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            padding: '0.25rem 0.75rem',
+                                            borderRadius: '50px',
+                                            fontSize: '0.875rem',
+                                            fontWeight: 600,
+                                            background: selectedBin.status === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                            color: selectedBin.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)'
+                                        }}>
+                                            {selectedBin.status === 'active' ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
+                                            {selectedBin.status.toUpperCase()}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Fill Level</div>
+                                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: selectedBin.fillLevel > 80 ? 'var(--status-danger)' : 'var(--text-primary)' }}>
+                                            {selectedBin.fillLevel}%
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Location</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
+                                            <MapPin size={16} color="var(--accent-manager)" /> {selectedBin.location || 'Unknown'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 style={{ color: 'var(--text-tertiary)', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Operational Details</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Purchase Cost</div>
+                                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent-finance)' }}>
+                                            {selectedBin.cost ? selectedBin.cost.toLocaleString() : '0'} SAR
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Last Collection</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}>
+                                            <Calendar size={16} color="var(--text-tertiary)" /> {selectedBin.lastCollection}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Coordinates</div>
+                                        <div style={{ fontSize: '0.875rem', fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>
+                                            {selectedBin.lat.toFixed(4)}, {selectedBin.lng.toFixed(4)}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ padding: '1.5rem', background: 'var(--bg-main)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                            <button onClick={() => setSelectedBin(null)} style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-manager)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>Close</button>
                         </div>
                     </div>
                 </div>
