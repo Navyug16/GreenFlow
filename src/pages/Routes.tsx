@@ -95,7 +95,10 @@ const RoutesPage = () => {
                 ]),
                 // T4: Airport -> Bins -> F3 -> Start
                 fetchAndSet('T4', [
-                    [24.9505, 46.7005], [24.9450, 46.6950], [24.95, 46.70], [24.9505, 46.7005]
+                    [24.9505, 46.7005], // B-09
+                    [24.9450, 46.6950], // B-10
+                    [24.9550, 46.7100], // Loop Detour
+                    [24.9505, 46.7005]  // Back
                 ]),
                 // T5: Northern -> Bins -> F1 -> Start
                 fetchAndSet('T5', [
@@ -309,7 +312,14 @@ const RoutesPage = () => {
                 </div>
             )}
 
-            <MapContainer center={[24.72, 46.68]} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+            <MapContainer
+                center={[24.72, 46.68]}
+                zoom={13}
+                style={{ height: '100%', width: '100%' }}
+                zoomControl={false}
+                scrollWheelZoom={true}
+                dragging={true}
+            >
                 <TileLayer
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                     attribution='&copy; CARTO'
