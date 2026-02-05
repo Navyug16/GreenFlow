@@ -199,7 +199,10 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
 
                         {user?.role === 'admin' && (
                             <button
-                                onClick={() => setShowAddAssetModal(true)}
+                                onClick={() => {
+                                    setNewAssetType(activeTab === 'bins' ? 'Bin' : 'Truck');
+                                    setShowAddAssetModal(true);
+                                }}
                                 style={{
                                     padding: '0.75rem 1.5rem',
                                     background: 'var(--accent-admin)',
