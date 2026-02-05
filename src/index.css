@@ -126,3 +126,61 @@ h4 {
   color: var(--text-primary) !important;
   border-color: var(--glass-border) !important;
 }
+
+/* --- Mobile Responsiveness --- */
+
+@media (max-width: 768px) {
+
+  /* Sidebar */
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Main Layout */
+  .main-content {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+
+  /* Header */
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+
+  .header-search {
+    display: none;
+    /* Hide search on small mobile to save space, or make it icon only */
+  }
+
+  .mobile-close-btn {
+    display: block !important;
+  }
+
+  /* Page Content */
+  .page-content {
+    padding: 1rem !important;
+  }
+
+  /* General Grid Adjustments */
+  .grid-overview {
+    grid-template-columns: 1fr;
+  }
+
+  /* Adjust chart containers or large cards */
+  .card {
+    overflow-x: auto;
+  }
+
+  /* Tables or Lists */
+  .responsive-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}

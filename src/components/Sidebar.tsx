@@ -2,13 +2,13 @@ import { useNavigate } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard, Map, Truck, Factory, AlertTriangle,
-    Camera, Users, Trash2, Wrench, LogOut
+    Camera, Users, Trash2, Wrench, LogOut, X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 import logo from '../assets/logo.png';
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
@@ -56,22 +56,42 @@ const Sidebar = () => {
     };
 
     return (
-        <aside style={{
-            width: 'var(--sidebar-width)',
-            height: '100vh',
-            position: 'fixed',
-            left: 0,
-            top: 0,
-            background: 'var(--glass-bg)',
-            backdropFilter: 'blur(20px)',
-            borderRight: '1px solid var(--glass-border)',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '1.5rem',
-            zIndex: 50
-        }}>
-            <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <aside
+            className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}
+            style={{
+                width: 'var(--sidebar-width)',
+                height: '100vh',
+                position: 'fixed',
+                left: 0,
+                top: 0,
+                background: 'var(--glass-bg)',
+                backdropFilter: 'blur(20px)',
+                borderRight: '1px solid var(--glass-border)',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '1.5rem',
+                zIndex: 50,
+                transition: 'transform 0.3s ease'
+            }}
+        >
+            <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                 <img src={logo} alt="GreenFlow Logo" style={{ height: '40px' }} />
+                <button
+                    onClick={onClose}
+                    className="mobile-close-btn"
+                    style={{
+                        position: 'absolute',
+                        right: -10,
+                        top: 0,
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-secondary)',
+                        display: 'none', // Hidden on desktop
+                        cursor: 'pointer'
+                    }}
+                >
+                    <X size={20} />
+                </button>
             </div>
 
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
