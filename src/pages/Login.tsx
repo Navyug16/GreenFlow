@@ -3,6 +3,8 @@ import { Users, Truck, Wrench, BarChart3, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import type { UserRole } from '../types';
 
+import logo from '../assets/logo.png';
+
 const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -54,6 +56,7 @@ const Login = () => {
             padding: '2rem'
         }}>
             <div style={{ marginBottom: '3rem', textAlign: 'center' }}>
+                <img src={logo} alt="GreenFlow Logo" style={{ width: '120px', marginBottom: '1.5rem', filter: 'drop-shadow(0 0 20px rgba(56,189,248,0.3))' }} />
                 <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', background: 'linear-gradient(to right, #38bdf8, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                     Welcome to GreenFlow
                 </h1>
