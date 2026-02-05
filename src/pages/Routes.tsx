@@ -4,6 +4,7 @@ import L, { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Fuel, Truck, Navigation, RefreshCw } from 'lucide-react';
 import { TRUCK_ROUTES, FACILITIES, BINS } from '../data/mockData';
+import { useData } from '../context/DataContext';
 
 // High-quality Truck Icon
 const truckIcon = new DivIcon({
@@ -75,6 +76,17 @@ const RoutesPage = () => {
     const [progress, setProgress] = useState(0);
     const [activeNotification, setActiveNotification] = useState<string | null>(null);
     const startTimeRef = useRef<number | null>(null);
+    const { updateBin } = useData();
+
+    // Sync Simulation to Global Context (Data Connect) every 2 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            simulatedBins.forEach(b => {
+                updateBin(b.id, { fillLevel: b.fillLevel });
+            });
+        }, 2000);
+        return () => clearInterval(interval);
+    }, [simulatedBins, updateBin]);
 
     // Fetch paths logic (kept similar but ensured it runs)
     useEffect(() => {

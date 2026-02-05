@@ -16,6 +16,7 @@ interface DataContextType {
     incidents: Incident[];
     addTruck: (truck: Truck) => void;
     addBin: (bin: Bin) => void;
+    updateBin: (id: string, updates: Partial<Bin>) => void;
     addRequest: (request: Request) => void;
     approveRequest: (id: string) => void;
     rejectRequest: (id: string) => void;
@@ -87,6 +88,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             }
         } else {
             setBins(prev => [...prev, bin]);
+        }
+    };
+
+    const updateBin = async (id: string, updates: Partial<Bin>) => {
+        if (db) {
+            try {
+                await updateDoc(doc(db, 'bins', id), updates);
+            } catch (e) {
+                console.error("Error updating bin", e);
+            }
+        } else {
+            setBins(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
         }
     };
 
@@ -171,7 +184,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <DataContext.Provider value={{ trucks, bins, requests, incidents, addTruck, addBin, addRequest, approveRequest, rejectRequest, resolveIncident }}>
+        <DataContext.Provider value={{ trucks, bins, requests, incidents, addTruck, addBin, updateBin, addRequest, approveRequest, rejectRequest, resolveIncident }}>
             {children}
         </DataContext.Provider>
     );
