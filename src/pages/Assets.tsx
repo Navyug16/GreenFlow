@@ -5,7 +5,7 @@ import { useData } from '../context/DataContext';
 
 const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 'trucks' | 'bins', hideTabs?: boolean }) => {
     const { user } = useAuth();
-    const { trucks, bins, addTruck, addBin, addRequest } = useData();
+    const { trucks, bins, addTruck, addBin, addRequest, deleteTruck, deleteBin } = useData();
 
     const [activeTab, setActiveTab] = useState<'trucks' | 'bins'>(defaultTab);
     const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'maintenance'>('all');
@@ -277,6 +277,29 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                 onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
                                 onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                             >
+                                {user?.role === 'admin' && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm('Delete this asset?')) deleteTruck(truck.id);
+                                        }}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '1rem',
+                                            right: '1rem',
+                                            padding: '0.5rem',
+                                            background: 'rgba(239, 68, 68, 0.1)',
+                                            color: 'var(--accent-danger)',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            zIndex: 50
+                                        }}
+                                        title="Delete Asset"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{ padding: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '12px', color: 'var(--accent-admin)' }}>
@@ -342,6 +365,29 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                 onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
                                 onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                             >
+                                {user?.role === 'admin' && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm('Delete this bin?')) deleteBin(bin.id);
+                                        }}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '1rem',
+                                            right: '1rem',
+                                            padding: '0.5rem',
+                                            background: 'rgba(239, 68, 68, 0.1)',
+                                            color: 'var(--accent-danger)',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            zIndex: 50
+                                        }}
+                                        title="Delete Asset"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{

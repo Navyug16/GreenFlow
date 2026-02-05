@@ -15,7 +15,9 @@ interface DataContextType {
     requests: Request[];
     incidents: Incident[];
     addTruck: (truck: Truck) => void;
+    deleteTruck: (id: string) => void;
     addBin: (bin: Bin) => void;
+    deleteBin: (id: string) => void;
     updateBin: (id: string, updates: Partial<Bin>) => void;
     updateFacility: (id: string, updates: Partial<Facility>) => void;
     addRequest: (request: Request) => void;
@@ -90,6 +92,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const deleteTruck = async (id: string) => {
+        if (db) {
+            try {
+                await deleteDoc(doc(db, 'trucks', id));
+            } catch (e) {
+                console.error("Error deleting truck", e);
+            }
+        } else {
+            setTrucks(prev => prev.filter(t => t.id !== id));
+        }
+    };
+
     const addBin = async (bin: Bin) => {
         if (db) {
             try {
@@ -111,6 +125,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             }
         } else {
             setBins(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
+        }
+    };
+
+    const deleteBin = async (id: string) => {
+        if (db) {
+            try {
+                await deleteDoc(doc(db, 'bins', id));
+            } catch (e) {
+                console.error("Error deleting bin", e);
+            }
+        } else {
+            setBins(prev => prev.filter(b => b.id !== id));
         }
     };
 
@@ -207,7 +233,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <DataContext.Provider value={{ trucks, bins, facilities, requests, incidents, addTruck, addBin, updateBin, updateFacility, addRequest, approveRequest, rejectRequest, resolveIncident }}>
+        <DataContext.Provider value={{ trucks, bins, facilities, requests, incidents, addTruck, deleteTruck, addBin, deleteBin, updateBin, updateFacility, addRequest, approveRequest, rejectRequest, resolveIncident }}>
             {children}
         </DataContext.Provider>
     );
