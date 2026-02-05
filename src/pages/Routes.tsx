@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker } from 'react-leaflet';
 import { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -54,6 +54,7 @@ const RoutesPage = () => {
     const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [activeNotification, setActiveNotification] = useState<string | null>(null);
+    const startTimeRef = useRef<number | null>(null);
 
     // Fetch paths logic (kept similar but ensured it runs)
     useEffect(() => {
@@ -116,12 +117,11 @@ const RoutesPage = () => {
     // Advanced Simulation Loop
     useEffect(() => {
         let animationFrameId: number;
-        let startTime: number;
         const duration = 20000; // 20s loop
 
         const animate = (time: number) => {
-            if (!startTime) startTime = time;
-            const elapsed = time - startTime;
+            if (startTimeRef.current === null) startTimeRef.current = time;
+            const elapsed = time - startTimeRef.current;
             const newProgress = (elapsed % duration) / duration;
 
             // 1. Check for Bin Collection
@@ -163,9 +163,13 @@ const RoutesPage = () => {
 
             // 2. Facility Drop logic
             if (newProgress > 0.98 && newProgress < 0.99) {
-                setActiveNotification("Trucks arriving at Facility for disposal...");
+                if (!activeNotification) setActiveNotification("Trucks arriving at Facility for disposal...");
             } else if (newProgress < 0.01) {
-                setActiveNotification(null);
+                // Only clear if it's the facility message or old
+                // Actually relying on timeout above for bins.
+                // For facility, we can just let it clear naturally or force it.
+                // Let's safe guard:
+                if (activeNotification === "Trucks arriving at Facility for disposal...") setActiveNotification(null);
             }
 
             setProgress(newProgress);
@@ -309,7 +313,7 @@ const RoutesPage = () => {
                         key={bin.id}
                         center={[bin.lat, bin.lng]}
                         radius={bin.fillLevel > 0 ? 6 : 4} // Smaller if empty
-                        fillColor={bin.fillLevel === 0 ? '#10B981' : bin.fillLevel > 90 ? '#EF4444' : '#F59E0B'}
+                        fillColor={bin.fillLevel < 50 ? '#10B981' : bin.fillLevel > 90 ? '#EF4444' : '#F59E0B'}
                         color="white"
                         weight={2}
                         fillOpacity={1}
