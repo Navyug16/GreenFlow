@@ -1,15 +1,16 @@
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Icon } from 'leaflet';
-import { DEMO_ROUTE, FACILITIES } from '../data/mockData';
+import { useData } from '../context/DataContext';
 
 // Fix Leaflet's default icon path issues
 import markerIconPng from "leaflet/dist/images/marker-icon.png";
 import markerIcon2xPng from "leaflet/dist/images/marker-icon-2x.png";
 import markerShadowPng from "leaflet/dist/images/marker-shadow.png";
 
-const defaultIcon = new Icon({
-    iconUrl: markerIconPng, // simple casting or import fix
+// Custom Icons could be added here
+const binIcon = new Icon({
+    iconUrl: markerIconPng,
     iconRetinaUrl: markerIcon2xPng,
     shadowUrl: markerShadowPng,
     iconSize: [25, 41],
@@ -19,34 +20,35 @@ const defaultIcon = new Icon({
 });
 
 const MapWidget = () => {
-    const position: [number, number] = [24.7136, 46.6753]; // Riyadh
+    const { bins } = useData();
+    const position: [number, number] = [24.7136, 46.6753]; // Riyadh Center
 
     return (
         <div style={{ height: '100%', width: '100%', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-            <MapContainer center={position} zoom={11} style={{ height: '100%', width: '100%' }}>
+            <MapContainer center={position} zoom={12} style={{ height: '100%', width: '100%' }}>
                 <TileLayer
                     // Using CartoDB Dark Matter for that high-tech look
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 />
 
-                {/* Facilities Markers */}
-                {FACILITIES.map(f => (
+                {/* Real Smart Bins from Database */}
+                {bins.map(bin => (
                     <Marker
-                        key={f.id}
-                        position={f.id === 'F1' ? [24.7136, 46.6753] : f.id === 'F2' ? [24.75, 46.7] : [24.65, 46.6]}
-                        icon={defaultIcon}
+                        key={bin.id}
+                        position={[bin.lat, bin.lng]}
+                        icon={binIcon}
                     >
                         <Popup>
-                            <strong>{f.name}</strong><br />
-                            Type: {f.type}<br />
-                            Status: {f.status}
+                            <strong>Bin #{bin.id}</strong><br />
+                            Status: <span style={{ color: bin.status === 'active' ? 'green' : 'red' }}>{bin.status}</span><br />
+                            Fill Level: {bin.fillLevel}%<br />
+                            Location: {bin.location || 'Unknown'}
                         </Popup>
                     </Marker>
                 ))}
 
-                {/* Demo Route */}
-                <Polyline positions={DEMO_ROUTE} color="var(--accent-admin)" />
+                {/* We can envision truck routes here later */}
             </MapContainer>
         </div>
     );

@@ -3,7 +3,8 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker } from '
 import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Brain, Fuel, TrendingUp, Truck } from 'lucide-react';
-import { BINS, TRUCK_ROUTES } from '../data/mockData';
+import { TRUCK_ROUTES } from '../data/mockData';
+import { useData } from '../context/DataContext';
 
 // Custom Icons
 const truckIcon = new Icon({
@@ -13,6 +14,7 @@ const truckIcon = new Icon({
 });
 
 const RoutesPage = () => {
+    const { bins } = useData();
     const [optimizing, setOptimizing] = useState(false);
     const [routes, setRoutes] = useState(TRUCK_ROUTES);
     const [selectedRoute, setSelectedRoute] = useState<string | null>(TRUCK_ROUTES[0].id);
@@ -263,7 +265,7 @@ const RoutesPage = () => {
                     />
 
                     {/* Render Bins */}
-                    {BINS.map(bin => (
+                    {bins.map(bin => (
                         <CircleMarker
                             key={bin.id}
                             center={[bin.lat, bin.lng]}
