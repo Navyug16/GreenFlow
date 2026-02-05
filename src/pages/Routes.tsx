@@ -74,20 +74,34 @@ const RoutesPage = () => {
         const updateRoutes = async () => {
             // Re-fetch logic or keep existing state if already populated? 
             // Better to re-fetch to be safe.
-            const t1Path = await fetchRouteGeometry([[24.6850, 46.6900], [24.6905, 46.6855], [24.7115, 46.6745], [24.7200, 46.6700]]);
-            const t5Path = await fetchRouteGeometry([[24.7500, 46.6250], [24.7555, 46.6305], [24.7600, 46.6350], [24.7650, 46.6400]]);
+            // T1: Start -> B-01 -> B-02 -> B-03 -> End
+            const t1Path = await fetchRouteGeometry([
+                [24.6850, 46.6900],
+                [24.6905, 46.6855], // B-01
+                [24.6960, 46.6810], // B-02
+                [24.7115, 46.6745], // B-03
+                [24.7200, 46.6700]
+            ]);
+
+            // T5: Northern Commercial (B-11, B-12)
+            const t5Path = await fetchRouteGeometry([
+                [24.7500, 46.6250],
+                [24.7555, 46.6305], // B-11
+                [24.7600, 46.6350], // B-12
+                [24.7650, 46.6400]
+            ]);
 
             // ... other placeholder fetches
-            const fetchAndSet = async (id: string, start: [number, number], end: [number, number]) => {
-                const path = await fetchRouteGeometry([start, end]);
+            const fetchAndSet = async (id: string, pathPoints: [number, number][]) => {
+                const path = await fetchRouteGeometry(pathPoints);
                 return { id, path };
             };
             const otherRoutes = await Promise.all([
-                fetchAndSet('T2', [24.6650, 46.7300], [24.6620, 46.7150]),
-                fetchAndSet('T3', [24.6005, 46.8005], [24.5950, 46.8050]),
-                fetchAndSet('T4', [24.9505, 46.7005], [24.9450, 46.6950]),
-                fetchAndSet('T6', [24.7700, 46.7800], [24.7850, 46.7400]),
-                fetchAndSet('T7', [24.6805, 46.6205], [24.6700, 46.6300]),
+                fetchAndSet('T2', [[24.6700, 46.7300], [24.6655, 46.7255], [24.6600, 46.7200], [24.6620, 46.7150]]), // B-05 -> B-04 -> B-06
+                fetchAndSet('T3', [[24.6005, 46.8005], [24.5950, 46.8050]]), // B-07 -> B-08
+                fetchAndSet('T4', [[24.9505, 46.7005], [24.9450, 46.6950]]), // B-09 -> B-10
+                fetchAndSet('T6', [[24.7700, 46.7800], [24.7850, 46.7400]]), // B-13 -> B-14
+                fetchAndSet('T7', [[24.6805, 46.6205], [24.6700, 46.6300]]), // B-15 -> End
             ]);
 
             setRoutes(prev => prev.map(r => {
@@ -152,8 +166,8 @@ const RoutesPage = () => {
                             }
                         } else {
                             // Slowly refill bin if it was empty, to simulate life
-                            if (bin.fillLevel < 90 && Math.random() > 0.95) {
-                                return { ...bin, fillLevel: bin.fillLevel + 0.5 };
+                            if (bin.fillLevel < 100 && Math.random() > 0.98) {
+                                return { ...bin, fillLevel: Math.min(100, bin.fillLevel + 0.1) };
                             }
                         }
                         return bin;
