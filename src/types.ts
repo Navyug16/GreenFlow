@@ -18,10 +18,14 @@ export interface KpiStat {
 
 export interface Route {
   id: string;
+  name: string; // Added from mock data
   driverName: string;
   truckId: string;
-  status: 'active' | 'completed' | 'pending';
+  vehicle: string; // Added from mock data (e.g., 'Compactor T-01')
+  status: 'active' | 'completed' | 'pending' | 'in_progress' | 'maintenance';
   fillLevel: number;
+  progress: number; // Added from mock data
+  efficiency: number; // Added from mock data
   coordinates: [number, number][]; // Simple path
 }
 

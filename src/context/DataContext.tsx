@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { TRUCKS as INITIAL_TRUCKS, BINS as INITIAL_BINS, REQUESTS as INITIAL_REQUESTS, RECENT_INCIDENTS as INITIAL_INCIDENTS, FACILITIES as INITIAL_FACILITIES } from '../data/mockData';
-import type { Incident, Facility, Truck, Bin, Request } from '../types';
+import type { Incident, Facility, Truck, Bin, Request, Route, User } from '../types';
 import { db } from '../lib/firebase';
 import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, writeBatch } from 'firebase/firestore';
 
@@ -14,6 +14,8 @@ interface DataContextType {
     facilities: Facility[];
     requests: Request[];
     incidents: Incident[];
+    routes: Route[]; // Added Route[]
+    users: User[]; // Added User[]
     addTruck: (truck: Truck) => void;
     deleteTruck: (id: string) => void;
     addBin: (bin: Bin) => void;
@@ -25,6 +27,7 @@ interface DataContextType {
     approveRequest: (id: string) => void;
     rejectRequest: (id: string) => void;
     resolveIncident: (id: string) => void;
+    updateUserRole: (id: string, role: string) => void; // Added User update function
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -36,6 +39,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const [facilities, setFacilities] = useState<Facility[]>(INITIAL_FACILITIES);
     const [requests, setRequests] = useState<Request[]>(INITIAL_REQUESTS);
     const [incidents, setIncidents] = useState<Incident[]>(INITIAL_INCIDENTS);
+    // New State for Routes and Users
+    const [routes, setRoutes] = useState<any[]>([]); // Using any for mock data temporarily as imports needed
+    const [users, setUsers] = useState<User[]>([]);
 
     // Sync with Firebase if connected
     useEffect(() => {
@@ -44,32 +50,72 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         console.log("Connecting to Firestore...");
 
         const unsubTrucks = onSnapshot(collection(db, 'trucks'), (snap) => {
-            const data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Truck));
-            // Merge Mock + DB
-            const merged: Truck[] = [...INITIAL_TRUCKS];
-            data.forEach(d => {
-                if (!merged.find(m => m.id === d.id)) merged.push(d);
+            const firestoreData = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Truck));
+            // Merge Mock + DB (Firestore takes precedence)
+            // If an item exists in Firestore, use it. If not, check if it's in Mock data.
+            const merged: Truck[] = [...firestoreData];
+            INITIAL_TRUCKS.forEach(mockItem => {
+                if (!merged.find(m => m.id === mockItem.id)) {
+                    merged.push(mockItem);
+                }
             });
             setTrucks(merged);
         });
 
         const unsubBins = onSnapshot(collection(db, 'bins'), (snap) => {
-            const data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Bin));
-            const merged: Bin[] = [...INITIAL_BINS];
-            data.forEach(d => {
-                if (!merged.find(m => m.id === d.id)) merged.push(d);
+            const firestoreData = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Bin));
+            const merged: Bin[] = [...firestoreData];
+            INITIAL_BINS.forEach(mockItem => {
+                if (!merged.find(m => m.id === mockItem.id)) {
+                    merged.push(mockItem);
+                }
             });
             setBins(merged);
         });
 
         const unsubRequests = onSnapshot(collection(db, 'requests'), (snap) => {
-            const data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Request));
-            if (data.length > 0) setRequests(data);
+            const firestoreData = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Request));
+            const merged: Request[] = [...firestoreData];
+            INITIAL_REQUESTS.forEach(mockItem => {
+                if (!merged.find(m => m.id === mockItem.id)) {
+                    merged.push(mockItem);
+                }
+            });
+            setRequests(merged);
         });
 
         const unsubIncidents = onSnapshot(collection(db, 'incidents'), (snap) => {
-            const data = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Incident));
-            if (data.length > 0) setIncidents(data);
+            const firestoreData = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Incident));
+            const merged: Incident[] = [...firestoreData];
+            INITIAL_INCIDENTS.forEach(mockItem => {
+                if (!merged.find(m => m.id === mockItem.id)) {
+                    merged.push(mockItem);
+                }
+            });
+            setIncidents(merged);
+        });
+
+        const unsubFacilities = onSnapshot(collection(db, 'facilities'), (snap) => {
+            const firestoreData = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Facility));
+            const merged: Facility[] = [...firestoreData];
+            INITIAL_FACILITIES.forEach(mockItem => {
+                if (!merged.find(m => m.id === mockItem.id)) {
+                    merged.push(mockItem);
+                }
+            });
+            setFacilities(merged);
+        });
+
+        const unsubRoutes = onSnapshot(collection(db, 'routes'), (snap) => {
+            const firestoreData = snap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            // Merge Mock Routes (Need to import mock routes if available, otherwise just use firestore)
+            // For now, if firestore is empty, use empty array or hardcoded simple demo routes if needed
+            setRoutes(firestoreData);
+        });
+
+        const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
+            const firestoreData = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as User));
+            setUsers(firestoreData);
         });
 
         return () => {
@@ -77,6 +123,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             unsubBins();
             unsubRequests();
             unsubIncidents();
+            unsubFacilities();
+            unsubRoutes();
+            unsubUsers();
         };
     }, []);
 
@@ -85,11 +134,46 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             try {
                 // Use setDoc to map our internal ID to Firestore ID
                 await setDoc(doc(db, 'trucks', truck.id), truck);
+
+                // Automatically Create Route if provided
+                if (truck.route && truck.route !== 'Unassigned') {
+                    const routeId = `R-${Date.now()}`;
+                    const newRoute = {
+                        id: routeId,
+                        name: truck.route,
+                        driverName: truck.driver || 'Unassigned',
+                        truckId: truck.id,
+                        vehicle: `${truck.type} ${truck.code}`,
+                        status: 'active',
+                        fillLevel: 0,
+                        progress: 0,
+                        efficiency: 100,
+                        coordinates: [[24.7136, 46.6753], [24.7136 + 0.01, 46.6753 + 0.01]] // Simple demo connection
+                    };
+                    await setDoc(doc(db, 'routes', routeId), newRoute);
+                }
             } catch (e) {
                 console.error("Error adding truck", e);
             }
         } else {
             setTrucks(prev => [...prev, truck]);
+            // Also update local routes state if needed for demo
+            if (truck.route) {
+                const routeId = `R-${Date.now()}`;
+                const newRoute = {
+                    id: routeId,
+                    name: truck.route,
+                    driverName: truck.driver || 'Unassigned',
+                    truckId: truck.id,
+                    vehicle: `${truck.type} ${truck.code}`,
+                    status: 'active',
+                    fillLevel: 0,
+                    progress: 0,
+                    efficiency: 100,
+                    coordinates: [[24.7136, 46.6753], [24.7136 + 0.01, 46.6753 + 0.01]]
+                };
+                setRoutes(prev => [...prev, newRoute]);
+            }
         }
     };
 
@@ -153,6 +237,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const updateUserRole = async (userId: string, role: string) => {
+        if (db) {
+            try {
+                await updateDoc(doc(db, 'users', userId), { role });
+            } catch (e) {
+                console.error("Error updating user role", e);
+            }
+        } else {
+            setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: role as any } : u));
+        }
+    };
+
     const seedDatabase = async () => {
         if (!db) {
             alert("Database not connected. Check .env config.");
@@ -170,9 +266,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             // Seed Facilities
             INITIAL_FACILITIES.forEach(f => batch.set(doc(db, 'facilities', f.id), f));
 
-            // Seed Requests & Incidents (Optional, but good for demo)
+            // Seed Requests & Incidents
             INITIAL_REQUESTS.forEach(r => batch.set(doc(db, 'requests', r.id), r));
             INITIAL_INCIDENTS.forEach(i => batch.set(doc(db, 'incidents', i.id), i));
+
+            // Seed Users (Optional Demo Users)
+            const demoUsers: User[] = [
+                { id: 'u1', name: 'Ali Al-Ahmed', role: 'admin', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024d' },
+                { id: 'u2', name: 'Sara Al-Mansoori', role: 'manager', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' },
+                { id: 'u3', name: 'Omar Farooq', role: 'engineer', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024d' },
+                { id: 'u4', name: 'Layla Hassan', role: 'finance', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' }
+            ];
+            demoUsers.forEach(u => batch.set(doc(db, 'users', u.id), u));
 
             await batch.commit();
             console.log("Database seeded successfully");
@@ -264,7 +369,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <DataContext.Provider value={{ trucks, bins, facilities, requests, incidents, addTruck, deleteTruck, addBin, deleteBin, updateBin, updateFacility, seedDatabase, addRequest, approveRequest, rejectRequest, resolveIncident }}>
+        <DataContext.Provider value={{ trucks, bins, facilities, requests, incidents, routes, users, addTruck, deleteTruck, addBin, deleteBin, updateBin, updateFacility, seedDatabase, addRequest, approveRequest, rejectRequest, resolveIncident, updateUserRole }}>
             {children}
         </DataContext.Provider>
     );

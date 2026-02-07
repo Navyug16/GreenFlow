@@ -5,7 +5,7 @@ import { Database, RefreshCw, Users, Shield, Server } from 'lucide-react';
 
 const AdminPage = () => {
     const { user } = useAuth(); // Ensure only admin can access this in UI
-    const { seedDatabase } = useData();
+    const { seedDatabase, users, updateUserRole } = useData();
     const [seeding, setSeeding] = React.useState(false);
 
     const handleSeed = async () => {
@@ -89,20 +89,42 @@ const AdminPage = () => {
                     </p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--status-good)' }}></div>
-                                <span>Ali Al-Ahmed (You)</span>
+                        {users.length > 0 ? (
+                            users.map(u => (
+                                <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: u.role === 'admin' ? 'var(--status-good)' : 'var(--text-tertiary)' }}></div>
+                                        <div>
+                                            <div style={{ fontWeight: 500 }}>{u.name || 'Unknown User'}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{u.id}</div>
+                                        </div>
+                                    </div>
+                                    <select
+                                        value={u.role}
+                                        onChange={(e) => updateUserRole(u.id, e.target.value)}
+                                        style={{
+                                            fontSize: '0.75rem',
+                                            background: 'rgba(0,0,0,0.2)',
+                                            padding: '0.25rem 0.5rem',
+                                            borderRadius: '4px',
+                                            color: 'white',
+                                            border: '1px solid var(--glass-border)',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <option value="admin">ADMIN</option>
+                                        <option value="manager">MANAGER</option>
+                                        <option value="engineer">ENGINEER</option>
+                                        <option value="finance">FINANCE</option>
+                                    </select>
+                                </div>
+                            ))
+                        ) : (
+                            <div style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: '1rem' }}>
+                                No users found in database. <br />
+                                <small>Seed the database to add demo users.</small>
                             </div>
-                            <span style={{ fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.2)', padding: '0.25rem 0.5rem', borderRadius: '4px', color: 'var(--accent-admin)' }}>ADMIN</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--text-tertiary)' }}></div>
-                                <span>Sara Al-Mansoori</span>
-                            </div>
-                            <span style={{ fontSize: '0.75rem', background: 'rgba(34, 197, 94, 0.2)', padding: '0.25rem 0.5rem', borderRadius: '4px', color: 'var(--accent-manager)' }}>MANAGER</span>
-                        </div>
+                        )}
                     </div>
                 </div>
 

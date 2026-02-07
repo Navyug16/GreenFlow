@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Truck, Trash2, Battery, AlertTriangle, CheckCircle2, Search, Gauge, Plus, X, MapPin, User, Calendar, CreditCard, ChevronRight } from 'lucide-react';
+import { Truck as TruckIcon, Trash2, Battery, AlertTriangle, CheckCircle2, Search, Gauge, Plus, X, MapPin, User, Calendar, CreditCard, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { Truck, Bin } from '../types';
 
 const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 'trucks' | 'bins', hideTabs?: boolean }) => {
     const { user } = useAuth();
@@ -29,8 +30,8 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
     const [newAssetCost, setNewAssetCost] = useState('');
 
     // Truck/Bin Details Modal State
-    const [selectedTruck, setSelectedTruck] = useState<any>(null);
-    const [selectedBin, setSelectedBin] = useState<any>(null);
+    const [selectedTruck, setSelectedTruck] = useState<Truck | null>(null);
+    const [selectedBin, setSelectedBin] = useState<Bin | null>(null);
 
     const filteredTrucks = trucks.filter(t =>
         (filterStatus === 'all' || t.status === filterStatus) &&
@@ -105,7 +106,14 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
         setNewAssetCost('');
     };
 
-    const StatsCard = ({ label, value, icon: Icon, color }: any) => (
+    interface StatsCardProps {
+        label: string;
+        value: number | string;
+        icon: React.ElementType;
+        color: string;
+    }
+
+    const StatsCard = ({ label, value, icon: Icon, color }: StatsCardProps) => (
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ padding: '0.75rem', borderRadius: '12px', background: `${color}20`, color: color }}>
                 <Icon size={24} />
@@ -122,7 +130,7 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
             {/* Header Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
                 <StatsCard label="Total Assets" value={trucks.length + bins.length} icon={Gauge} color="var(--accent-admin)" />
-                <StatsCard label="Active Fleet" value={trucks.filter(t => t.status === 'active').length} icon={Truck} color="var(--status-good)" />
+                <StatsCard label="Active Fleet" value={trucks.filter(t => t.status === 'active').length} icon={TruckIcon} color="var(--status-good)" />
                 <StatsCard label="Smart Bins" value={bins.length} icon={Trash2} color="var(--accent-manager)" />
                 <StatsCard label="Maintenance" value={trucks.filter(t => t.status === 'maintenance').length + bins.filter(b => b.status === 'maintenance').length} icon={AlertTriangle} color="var(--accent-danger)" />
             </div>
@@ -150,7 +158,7 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                         transition: 'all 0.2s'
                                     }}
                                 >
-                                    <Truck size={16} /> Trucks
+                                    <TruckIcon size={16} /> Trucks
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('bins')}
@@ -303,7 +311,7 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{ padding: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '12px', color: 'var(--accent-admin)' }}>
-                                            <Truck size={32} />
+                                            <TruckIcon size={32} />
                                         </div>
                                         <div>
                                             <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{truck.code}</h3>
