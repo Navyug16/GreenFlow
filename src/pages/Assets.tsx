@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Truck as TruckIcon, Trash2, Battery, AlertTriangle, CheckCircle2, Search, Gauge, Plus, X, MapPin, CreditCard, ChevronRight, User, Calendar } from 'lucide-react';
+import { Truck as TruckIcon, Trash2, Battery, AlertTriangle, CheckCircle2, Search, Gauge, Plus, X, MapPin, CreditCard, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import type { Truck, Bin } from '../types';

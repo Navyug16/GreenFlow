@@ -16,7 +16,12 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<User | null>({
+        id: 'dev-admin',
+        name: 'Dev Admin',
+        role: 'admin',
+        avatar: 'https://i.pravatar.cc/150'
+    });
     const [authError] = useState<string | null>(null);
 
     // Sync with Firebase Auth State
@@ -47,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     });
                 }
             } else {
-                setUser(null);
+                // setUser(null); // DEV: Removed login credential requirement (commented out logout)
             }
         });
 
