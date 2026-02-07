@@ -2,6 +2,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Icon } from 'leaflet';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 
 // Fix Leaflet's default icon path issues
 import markerIconPng from "leaflet/dist/images/marker-icon.png";
@@ -21,7 +22,13 @@ const binIcon = new Icon({
 
 const MapWidget = () => {
     const { bins } = useData();
+    const { user } = useAuth();
     const position: [number, number] = [24.7136, 46.6753]; // Riyadh Center
+
+    // Filter Bins for Manager (West Region)
+    const displayBins = user?.role === 'manager'
+        ? bins.filter(b => b.location && b.location.includes('West'))
+        : bins;
 
     return (
         <div style={{ height: '100%', width: '100%', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
@@ -33,7 +40,7 @@ const MapWidget = () => {
                 />
 
                 {/* Real Smart Bins from Database */}
-                {bins.map(bin => (
+                {displayBins.map(bin => (
                     <Marker
                         key={bin.id}
                         position={[bin.lat, bin.lng]}

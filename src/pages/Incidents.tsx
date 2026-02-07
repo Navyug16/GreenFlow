@@ -1,8 +1,12 @@
 
 import { AlertTriangle, CheckCircle, Search, Filter } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 
 const IncidentsPage = () => {
+    const { user } = useAuth();
+    if (user?.role !== 'admin' && user?.role !== 'engineer') return <div style={{ padding: '2rem', color: 'white' }}>Access Restricted</div>;
+
     const { incidents, resolveIncident } = useData();
 
     return (

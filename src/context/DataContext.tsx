@@ -1,12 +1,8 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { TRUCKS as INITIAL_TRUCKS, BINS as INITIAL_BINS, REQUESTS as INITIAL_REQUESTS, RECENT_INCIDENTS as INITIAL_INCIDENTS, FACILITIES as INITIAL_FACILITIES } from '../data/mockData';
-import type { Incident, Facility, Truck, Bin, Request, Route, User } from '../types';
+import { TRUCKS as INITIAL_TRUCKS, BINS as INITIAL_BINS, REQUESTS as INITIAL_REQUESTS, RECENT_INCIDENTS as INITIAL_INCIDENTS, FACILITIES as INITIAL_FACILITIES, TRUCK_ROUTES as INITIAL_TRUCK_ROUTES, MACHINERY as INITIAL_MACHINERY } from '../data/mockData';
+import type { Incident, Facility, Truck, Bin, Request, Route, User, Machine } from '../types';
 import { db } from '../lib/firebase';
 import { collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, writeBatch } from 'firebase/firestore';
-
-// Define types
-// Define types removed to use imported types
-
 
 interface DataContextType {
     trucks: Truck[];
@@ -14,36 +10,37 @@ interface DataContextType {
     facilities: Facility[];
     requests: Request[];
     incidents: Incident[];
-    routes: Route[]; // Added Route[]
-    users: User[]; // Added User[]
+    routes: Route[];
+    machinery: Machine[];
+    users: User[];
     addTruck: (truck: Truck) => void;
     deleteTruck: (id: string) => void;
     addBin: (bin: Bin) => void;
     deleteBin: (id: string) => void;
     updateBin: (id: string, updates: Partial<Bin>) => void;
+    updateTruck: (id: string, updates: Partial<Truck>) => void;
     updateFacility: (id: string, updates: Partial<Facility>) => void;
+    updateMachine: (id: string, updates: Partial<Machine>) => void;
     seedDatabase: () => Promise<void>;
     addRequest: (request: Request) => void;
     approveRequest: (id: string) => void;
     rejectRequest: (id: string) => void;
     resolveIncident: (id: string) => void;
-    updateUserRole: (id: string, role: string) => void; // Added User update function
+    updateUserRole: (id: string, role: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
-    // Initial state is mock data by default
-    const [trucks, setTrucks] = useState<Truck[]>(INITIAL_TRUCKS);
-    const [bins, setBins] = useState<Bin[]>(INITIAL_BINS);
+    const [trucks, setTrucks] = useState<Truck[]>(INITIAL_TRUCKS as unknown as Truck[]);
+    const [bins, setBins] = useState<Bin[]>(INITIAL_BINS as unknown as Bin[]);
     const [facilities, setFacilities] = useState<Facility[]>(INITIAL_FACILITIES);
     const [requests, setRequests] = useState<Request[]>(INITIAL_REQUESTS);
     const [incidents, setIncidents] = useState<Incident[]>(INITIAL_INCIDENTS);
-    // New State for Routes and Users
-    const [routes, setRoutes] = useState<any[]>([]); // Using any for mock data temporarily as imports needed
+    const [routes, setRoutes] = useState<Route[]>(INITIAL_TRUCK_ROUTES as unknown as Route[]);
+    const [machinery, setMachinery] = useState<Machine[]>(INITIAL_MACHINERY as unknown as Machine[]);
     const [users, setUsers] = useState<User[]>([]);
 
-    // Sync with Firebase if connected
     useEffect(() => {
         if (!db) return;
 
@@ -51,8 +48,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
         const unsubTrucks = onSnapshot(collection(db, 'trucks'), (snap) => {
             const firestoreData = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Truck));
-            // Merge Mock + DB (Firestore takes precedence)
-            // If an item exists in Firestore, use it. If not, check if it's in Mock data.
             const merged: Truck[] = [...firestoreData];
             INITIAL_TRUCKS.forEach(mockItem => {
                 if (!merged.find(m => m.id === mockItem.id)) {
@@ -106,11 +101,27 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             setFacilities(merged);
         });
 
+        const unsubMachinery = onSnapshot(collection(db, 'machinery'), (snap) => {
+            const firestoreData = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Machine));
+            const merged: Machine[] = [...firestoreData];
+            INITIAL_MACHINERY.forEach(mockItem => {
+                const castMockItem = mockItem as unknown as Machine;
+                if (!merged.find(m => m.id === castMockItem.id)) {
+                    merged.push(castMockItem);
+                }
+            });
+            setMachinery(merged);
+        });
+
         const unsubRoutes = onSnapshot(collection(db, 'routes'), (snap) => {
-            const firestoreData = snap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-            // Merge Mock Routes (Need to import mock routes if available, otherwise just use firestore)
-            // For now, if firestore is empty, use empty array or hardcoded simple demo routes if needed
-            setRoutes(firestoreData);
+            const firestoreData = snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Route));
+            const merged: Route[] = [...firestoreData];
+            INITIAL_TRUCK_ROUTES.forEach(mockItem => {
+                if (!merged.find(m => m.id === mockItem.id)) {
+                    merged.push(mockItem as Route);
+                }
+            });
+            setRoutes(merged);
         });
 
         const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
@@ -124,31 +135,62 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             unsubRequests();
             unsubIncidents();
             unsubFacilities();
+            unsubMachinery();
             unsubRoutes();
             unsubUsers();
         };
     }, []);
 
+    const checkAssetHealth = async (_id: string, type: 'Truck' | 'Bin' | 'Machine', health: number, name: string) => {
+        if (health < 20) {
+            // High Severity Incident
+            const newIncident: Incident = {
+                id: `inc-${Date.now()}`,
+                type: 'asset_failure',
+                message: `Critical health alert for ${type} ${name}: Health at ${health}%`,
+                timestamp: 'Just now',
+                severity: 'high',
+                resolved: false
+            };
+            if (db) await setDoc(doc(db, 'incidents', newIncident.id), newIncident);
+            else setIncidents(prev => [newIncident, ...prev]);
+        } else if (health < 50) {
+            // Maintenance Request
+            const newRequest: Request = {
+                id: `req-${Date.now()}`,
+                type: type,
+                notes: `Automated maintenance request for ${name}. Health is ${health}%`,
+                status: 'pending',
+                date: new Date().toISOString().split('T')[0],
+                requester: 'System Monitor',
+                details: 'Health check failed threshold'
+            };
+            if (db) await setDoc(doc(db, 'requests', newRequest.id), newRequest);
+            else setRequests(prev => [newRequest, ...prev]);
+        }
+    };
+
     const addTruck = async (truck: Truck) => {
         if (db) {
             try {
-                // Use setDoc to map our internal ID to Firestore ID
                 await setDoc(doc(db, 'trucks', truck.id), truck);
-
-                // Automatically Create Route if provided
                 if (truck.route && truck.route !== 'Unassigned') {
                     const routeId = `R-${Date.now()}`;
-                    const newRoute = {
+                    const newRoute: Route = {
                         id: routeId,
                         name: truck.route,
-                        driverName: truck.driver || 'Unassigned',
+                        region: 'Unassigned Region',
+                        driver: truck.driver || 'Unassigned',
                         truckId: truck.id,
                         vehicle: `${truck.type} ${truck.code}`,
+                        assignedBinIds: [],
                         status: 'active',
+                        distance: 0,
+                        currentFuelCost: 0,
                         fillLevel: 0,
                         progress: 0,
                         efficiency: 100,
-                        coordinates: [[24.7136, 46.6753], [24.7136 + 0.01, 46.6753 + 0.01]] // Simple demo connection
+                        currentPath: [[24.7136, 46.6753], [24.7136 + 0.01, 46.6753 + 0.01]]
                     };
                     await setDoc(doc(db, 'routes', routeId), newRoute);
                 }
@@ -157,20 +199,23 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             }
         } else {
             setTrucks(prev => [...prev, truck]);
-            // Also update local routes state if needed for demo
             if (truck.route) {
                 const routeId = `R-${Date.now()}`;
-                const newRoute = {
+                const newRoute: Route = {
                     id: routeId,
                     name: truck.route,
-                    driverName: truck.driver || 'Unassigned',
+                    region: 'Unassigned Region',
+                    driver: truck.driver || 'Unassigned',
                     truckId: truck.id,
                     vehicle: `${truck.type} ${truck.code}`,
+                    assignedBinIds: [],
                     status: 'active',
+                    distance: 0,
+                    currentFuelCost: 0,
                     fillLevel: 0,
                     progress: 0,
                     efficiency: 100,
-                    coordinates: [[24.7136, 46.6753], [24.7136 + 0.01, 46.6753 + 0.01]]
+                    currentPath: [[24.7136, 46.6753], [24.7136 + 0.01, 46.6753 + 0.01]]
                 };
                 setRoutes(prev => [...prev, newRoute]);
             }
@@ -202,6 +247,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const updateBin = async (id: string, updates: Partial<Bin>) => {
+        const bin = bins.find(b => b.id === id);
+        if (bin && updates.health !== undefined) {
+            checkAssetHealth(id, 'Bin', updates.health, bin.location || id);
+        }
+
         if (db) {
             try {
                 await updateDoc(doc(db, 'bins', id), updates);
@@ -210,6 +260,23 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             }
         } else {
             setBins(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
+        }
+    };
+
+    const updateTruck = async (id: string, updates: Partial<Truck>) => {
+        const truck = trucks.find(t => t.id === id);
+        if (truck && updates.health !== undefined) {
+            checkAssetHealth(id, 'Truck', updates.health, truck.code);
+        }
+
+        if (db) {
+            try {
+                await updateDoc(doc(db, 'trucks', id), updates);
+            } catch (e) {
+                console.error("Error updating truck", e);
+            }
+        } else {
+            setTrucks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
         }
     };
 
@@ -237,6 +304,23 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const updateMachine = async (id: string, updates: Partial<Machine>) => {
+        const machine = machinery.find(m => m.id === id);
+        if (machine && updates.health !== undefined) {
+            checkAssetHealth(id, 'Machine', updates.health, machine.name);
+        }
+
+        if (db) {
+            try {
+                await updateDoc(doc(db, 'machinery', id), updates);
+            } catch (e) {
+                console.error("Error updating machine", e);
+            }
+        } else {
+            setMachinery(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
+        }
+    };
+
     const updateUserRole = async (userId: string, role: string) => {
         if (db) {
             try {
@@ -258,19 +342,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             const batch = writeBatch(db);
-
-            // Seed Trucks
             INITIAL_TRUCKS.forEach(t => batch.set(doc(db, 'trucks', t.id), t));
-            // Seed Bins
             INITIAL_BINS.forEach(b => batch.set(doc(db, 'bins', b.id), b));
-            // Seed Facilities
             INITIAL_FACILITIES.forEach(f => batch.set(doc(db, 'facilities', f.id), f));
-
-            // Seed Requests & Incidents
             INITIAL_REQUESTS.forEach(r => batch.set(doc(db, 'requests', r.id), r));
             INITIAL_INCIDENTS.forEach(i => batch.set(doc(db, 'incidents', i.id), i));
-
-            // Seed Users (Optional Demo Users)
+            INITIAL_MACHINERY.forEach(m => batch.set(doc(db, 'machinery', m.id), m));
             const demoUsers: User[] = [
                 { id: 'u1', name: 'Ali Al-Ahmed', role: 'admin', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024d' },
                 { id: 'u2', name: 'Sara Al-Mansoori', role: 'manager', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' },
@@ -278,7 +355,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
                 { id: 'u4', name: 'Layla Hassan', role: 'finance', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' }
             ];
             demoUsers.forEach(u => batch.set(doc(db, 'users', u.id), u));
-
             await batch.commit();
             console.log("Database seeded successfully");
             alert("Database seeded successfully!");
@@ -303,14 +379,14 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const approveRequest = async (id: string) => {
         const request = requests.find(r => r.id === id);
         if (!request) return;
-
-        // Logic to convert approved request to actual asset
         if (request.type === 'Truck') {
             const newTruck: Truck = {
                 id: `T-${Date.now()}`,
                 code: `T-${Math.floor(Math.random() * 1000)}`,
                 type: 'Compactor',
                 status: 'active',
+                health: 100,
+                region: 'Unassigned',
                 fuel: 100,
                 mileage: 0,
                 lastService: new Date().toISOString().split('T')[0],
@@ -321,9 +397,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         } else if (request.type === 'Bin') {
             const newBin: Bin = {
                 id: `B-${Math.floor(Math.random() * 10000)}`,
-                lat: 24.7 + (Math.random() * 0.1), // Mock location near Riyadh
+                lat: 24.7 + (Math.random() * 0.1),
                 lng: 46.6 + (Math.random() * 0.1),
                 fillLevel: 0,
+                health: 100,
+                region: 'Unassigned',
+                overflowStatus: false,
                 status: 'active',
                 lastCollection: 'Just now',
                 location: request.location || 'Unknown Location',
@@ -331,8 +410,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             };
             await addBin(newBin);
         }
-
-        // Remove from pending requests
         if (db) {
             try {
                 await deleteDoc(doc(db, 'requests', id));
@@ -369,7 +446,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <DataContext.Provider value={{ trucks, bins, facilities, requests, incidents, routes, users, addTruck, deleteTruck, addBin, deleteBin, updateBin, updateFacility, seedDatabase, addRequest, approveRequest, rejectRequest, resolveIncident, updateUserRole }}>
+        <DataContext.Provider value={{ trucks, bins, facilities, requests, incidents, routes, machinery, users, addTruck, deleteTruck, addBin, deleteBin, updateBin, updateTruck, updateFacility, updateMachine, seedDatabase, addRequest, approveRequest, rejectRequest, resolveIncident, updateUserRole }}>
             {children}
         </DataContext.Provider>
     );

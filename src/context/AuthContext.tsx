@@ -11,18 +11,26 @@ interface AuthContextType {
     login: (role: UserRole) => Promise<void>; // Modified signature
     logout: () => void;
     authError: string | null;
+    switchRole: (role: UserRole) => void;
+    auditLog: { id: number; user: string; action: string; time: string; type: string }[];
+    isRoleSelectorOpen: boolean;
+    openRoleSelector: () => void;
+    closeRoleSelector: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    // DEV: Default to Admin user with full profile to bypass login
     const [user, setUser] = useState<User | null>({
         id: 'dev-admin',
-        name: 'Dev Admin',
+        name: 'Ali Al-Ahmed',
         role: 'admin',
-        avatar: 'https://i.pravatar.cc/150'
+        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024d'
     });
     const [authError] = useState<string | null>(null);
+    const [auditLog, setAuditLog] = useState<{ id: number; user: string; action: string; time: string; type: string }[]>([]);
+    const [isRoleSelectorOpen, setIsRoleSelectorOpen] = useState(false);
 
     // Sync with Firebase Auth State
     useEffect(() => {
@@ -69,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             let avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d';
 
             switch (role) {
-                case 'admin': name = 'Ali Al-Ahmed'; break;
+                case 'admin': name = 'Ali Al-Ahmed'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d'; break;
                 case 'manager': name = 'Sara Al-Mansoori'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026704d'; break;
                 case 'engineer': name = 'Omar Farooq'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d'; break;
                 case 'finance': name = 'Layla Hassan'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026704d'; break;
@@ -84,29 +92,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
 
-        // AUTO-CREATE ACCOUNT FOR DEMO ROLES (If using Real Auth)
-        // For this "Role Button" login UI, we can trick it by signing in anonymously or using hardcoded demo accounts if we wanted.
-        // But since the user likes the "Button Click" simplicity, we will stick to the 'Mock' state style for now
-        // UNLESS the user explicitly asks for Email/Password forms.
-
-        // MIXED MODE: We will just set the user state locally so the app works instantly
-        // BUT we will also try to anonymously sign in to firebase so rules work
-        /*
-        try {
-            await signInAnonymously(auth);
-            // After sign in, the useEffect above handles setting the user? 
-            // Actually, for anonymous, we might not have a profile.
-        } catch (e) {
-            console.error(e);
-        }
-        */
-
         // KEEPING EXISTING LOGIN LOGIC for the simplified UX requested
         let name = 'Admin User';
         let avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d';
 
         switch (role) {
-            case 'admin': name = 'Ali Al-Ahmed'; break;
+            case 'admin': name = 'Ali Al-Ahmed'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d'; break;
             case 'manager': name = 'Sara Al-Mansoori'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026704d'; break;
             case 'engineer': name = 'Omar Farooq'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d'; break;
             case 'finance': name = 'Layla Hassan'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026704d'; break;
@@ -131,8 +122,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
     };
 
+    const switchRole = (role: UserRole) => {
+        let name = 'Admin User';
+        let avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d';
+
+        switch (role) {
+            case 'admin': name = 'Ali Al-Ahmed'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d'; break;
+            case 'manager': name = 'Sara Al-Mansoori'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026704d'; break;
+            case 'engineer': name = 'Omar Farooq'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d'; break;
+            case 'finance': name = 'Layla Hassan'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026704d'; break;
+        }
+
+        const newUser = {
+            id: user?.id || `u-demo-${role}`,
+            name,
+            role,
+            avatar
+        };
+
+        setUser(newUser);
+
+        // Add to audit log
+        const logEntry = {
+            id: Date.now(),
+            user: name,
+            action: `Switched role to ${role.toUpperCase()}`,
+            time: 'Just now',
+            type: 'system'
+        };
+        setAuditLog(prev => [logEntry, ...prev]);
+        setIsRoleSelectorOpen(false);
+    };
+
+    const openRoleSelector = () => setIsRoleSelectorOpen(true);
+    const closeRoleSelector = () => setIsRoleSelectorOpen(false);
+
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, authError }}>
+        <AuthContext.Provider value={{
+            user,
+            isAuthenticated: !!user,
+            login,
+            logout,
+            authError,
+            switchRole,
+            auditLog,
+            isRoleSelectorOpen,
+            openRoleSelector,
+            closeRoleSelector
+        }}>
             {children}
         </AuthContext.Provider>
     );

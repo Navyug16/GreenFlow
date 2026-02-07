@@ -1,21 +1,20 @@
-import { useNavigate } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard, Map, Truck, Factory, AlertTriangle,
-    Camera, Users, Trash2, Wrench, LogOut, X
+    Camera, Users, Trash2, Wrench, X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 import logo from '../assets/logo.png';
 
 const Sidebar = ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) => {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
+    const { user, openRoleSelector } = useAuth();
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
+
+    // const handleLogout = () => {
+    //     logout();
+    //     navigate('/login');
+    // };
 
     if (!user) return null; // Should not happen in protected layout
 
@@ -48,6 +47,8 @@ const Sidebar = ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
             case 'finance':
                 return [
                     { icon: LayoutDashboard, label: 'Overview', path: '/' },
+                    { icon: Map, label: 'Routes', path: '/routes' },
+                    { icon: Truck, label: 'Assets', path: '/assets' },
                     { icon: Factory, label: 'Facilities', path: '/facilities' },
                 ];
             default:
@@ -121,24 +122,24 @@ const Sidebar = ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
 
             <div style={{ padding: '1rem', borderTop: '1px solid var(--glass-border)', marginBottom: '1rem' }}>
                 <button
-                    onClick={handleLogout}
+                    onClick={openRoleSelector}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.75rem',
                         width: '100%',
                         padding: '0.875rem 1rem',
-                        background: 'rgba(239, 68, 68, 0.1)',
+                        background: 'rgba(56, 189, 248, 0.1)',
                         border: 'none',
                         borderRadius: 'var(--radius-sm)',
-                        color: 'var(--status-danger)',
+                        color: 'var(--text-primary)',
                         cursor: 'pointer',
                         fontWeight: 500,
                         transition: 'background 0.2s'
                     }}
                 >
-                    <LogOut size={20} />
-                    <span>Logout</span>
+                    <Users size={20} />
+                    <span>Switch Role</span>
                 </button>
             </div>
 

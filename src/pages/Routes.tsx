@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { Fuel, Truck, Navigation, RefreshCw } from 'lucide-react';
 import { TRUCK_ROUTES, FACILITIES, BINS } from '../data/mockData';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 
 // High-quality Truck Icon
 const truckIcon = new DivIcon({
@@ -77,6 +78,16 @@ const RoutesPage = () => {
     const [activeNotification, setActiveNotification] = useState<string | null>(null);
     const startTimeRef = useRef<number | null>(null);
     const { updateBin } = useData();
+    const { user } = useAuth();
+
+    if (user?.role !== 'admin' && user?.role !== 'manager' && user?.role !== 'finance') {
+        return (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                <h2>Access Restricted</h2>
+                <p>You do not have permission to view this page.</p>
+            </div>
+        );
+    }
 
     // Sync Simulation to Global Context (Data Connect) every 2 seconds
     useEffect(() => {
@@ -341,7 +352,7 @@ const RoutesPage = () => {
                                     <Truck size={16} />
                                     <div>
                                         <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{r.name}</div>
-                                        <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{r.driver}</div>
+                                        <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{r.driver} • {r.distance}km • {r.assignedBinIds?.length || 0} Bins</div>
                                     </div>
                                 </div>
                                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: r.efficiency > 90 ? '#10B981' : '#F59E0B' }}>

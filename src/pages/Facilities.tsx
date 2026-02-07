@@ -5,6 +5,10 @@ import { useAuth } from '../context/AuthContext';
 const FacilitiesPage = () => {
     const { user } = useAuth();
 
+    if (user?.role === 'engineer') {
+        return <div style={{ padding: '2rem', color: 'white' }}>Access Restricted: Engineers view specific machinery via the dedicated module.</div>;
+    }
+
     const { facilities } = useData();
 
     const getIcon = (type: string) => {
@@ -75,6 +79,22 @@ const FacilitiesPage = () => {
 
                     return (
                         <div key={facility.id} className="card" style={{ position: 'relative', overflow: 'hidden' }}>
+                            {facility.name.includes('West') && facility.type === 'dumpyard' && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    right: 0,
+                                    background: 'var(--accent-danger)',
+                                    color: 'white',
+                                    padding: '0.25rem 1rem',
+                                    borderBottomLeftRadius: '12px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700
+                                }}>
+                                    RESTRICTED
+                                </div>
+                            )}
+
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     <div style={{
@@ -89,7 +109,7 @@ const FacilitiesPage = () => {
                                     <div>
                                         <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{facility.name}</h3>
                                         <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-tertiary)', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                            {facility.type.replace('_', ' ')}
+                                            {facility.region} • {facility.type.replace('_', ' ')}
                                         </p>
                                     </div>
                                 </div>
@@ -111,9 +131,49 @@ const FacilitiesPage = () => {
                                 </div>
                             </div>
 
-                            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', minHeight: '3rem' }}>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', minHeight: '3rem', fontSize: '0.9rem' }}>
                                 {facility.description}
                             </p>
+
+                            {/* Metrics Grid */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div style={{ background: 'var(--bg-main)', padding: '0.75rem', borderRadius: '8px' }}>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '0.25rem' }}>Incoming Waste</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>{facility.incomingWaste} <span style={{ fontSize: '0.8rem' }}>Tons/day</span></div>
+                                </div>
+                                <div style={{ background: 'var(--bg-main)', padding: '0.75rem', borderRadius: '8px' }}>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '0.25rem' }}>Revenue</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--status-good)' }}>SAR {facility.revenue.toLocaleString()}</div>
+                                </div>
+                            </div>
+
+                            {/* Utilization Bar */}
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>Capacity Utilization</span>
+                                    <span style={{ fontWeight: 600 }}>{Math.round((facility.currentLoad / facility.capacity) * 100)}%</span>
+                                </div>
+                                <div style={{ width: '100%', height: '8px', background: 'var(--bg-panel)', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <div style={{
+                                        width: `${(facility.currentLoad / facility.capacity) * 100}%`,
+                                        height: '100%',
+                                        background: (facility.currentLoad / facility.capacity) > 0.9 ? 'var(--status-danger)' : color,
+                                        borderRadius: '4px'
+                                    }} />
+                                </div>
+                                <div style={{ textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
+                                    {facility.currentLoad.toLocaleString()} / {facility.capacity.toLocaleString()} Tons
+                                </div>
+                            </div>
+
+                            {/* Categories */}
+                            <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                {facility.wasteCategory.map(cat => (
+                                    <span key={cat} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)' }}>
+                                        {cat}
+                                    </span>
+                                ))}
+                            </div>
 
                             <div style={{
                                 background: 'var(--bg-main)',
@@ -124,13 +184,13 @@ const FacilitiesPage = () => {
                                 alignItems: 'center',
                                 marginBottom: '1.5rem'
                             }}>
-                                <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Current Output</span>
+                                <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Output ({facility.type === 'energy' ? 'Energy' : 'Recycled'})</span>
                                 <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'white' }}>
                                     {facility.output} <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{getUnit(facility.type)}</span>
                                 </span>
                             </div>
 
-                            {/* Controls (Visual specific to Admin/Manager) */}
+                            {/* Controls */}
                             <div style={{ display: 'flex', gap: '0.75rem' }}>
                                 <button style={{
                                     flex: 1,

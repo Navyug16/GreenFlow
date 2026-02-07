@@ -25,7 +25,9 @@ const StatsCard = ({ label, value, icon: Icon, color }: StatsCardProps) => (
 
 const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 'trucks' | 'bins', hideTabs?: boolean }) => {
     const { user } = useAuth();
-    const { trucks, bins, addTruck, addBin, addRequest, deleteTruck, deleteBin } = useData();
+    const { trucks, bins, addTruck, addBin, addRequest, deleteTruck, deleteBin, updateTruck, updateBin } = useData();
+
+
 
     const [activeTab, setActiveTab] = useState<'trucks' | 'bins'>(defaultTab);
     const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'maintenance'>('all');
@@ -51,6 +53,28 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
     // Truck/Bin Details Modal State
     const [selectedTruck, setSelectedTruck] = useState<Truck | null>(null);
     const [selectedBin, setSelectedBin] = useState<Bin | null>(null);
+    const [maintenanceNotes, setMaintenanceNotes] = useState('');
+
+    const handleUpdateAssetStatus = async (type: 'truck' | 'bin', id: string, newStatus: string) => {
+        if (type === 'truck') {
+            await updateTruck(id, {
+                status: newStatus as any,
+                lastService: newStatus === 'active' ? new Date().toISOString().split('T')[0] : undefined
+            });
+        } else {
+            await updateBin(id, {
+                status: newStatus as any,
+                lastCollection: newStatus === 'active' ? 'Just now' : undefined
+            });
+        }
+        if (maintenanceNotes) {
+            console.log(`Maintenance Log for ${id}: ${maintenanceNotes}`);
+            alert(`Status updated and log saved.`);
+        }
+        setMaintenanceNotes('');
+        setSelectedTruck(null);
+        setSelectedBin(null);
+    };
 
     const filteredTrucks = useMemo(() => trucks.filter(t =>
         (filterStatus === 'all' || t.status === filterStatus) &&
@@ -97,6 +121,8 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                 code: newAssetCode || `T-${Math.floor(Math.random() * 1000)}`,
                 type: 'Compactor',
                 status: 'active',
+                health: 100,
+                region: 'Unassigned',
                 fuel: 100,
                 mileage: 0,
                 lastService: 'New',
@@ -112,6 +138,9 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                 lat: 24.71,
                 lng: 46.67,
                 fillLevel: 0,
+                health: 100,
+                region: 'Unassigned',
+                overflowStatus: false,
                 status: 'active',
                 lastCollection: 'Just now',
                 location: newAssetLocation || 'Unknown',
@@ -315,7 +344,7 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                         </div>
                                         <div>
                                             <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{truck.code}</h3>
-                                            <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>{truck.type}</p>
+                                            <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>{truck.type} • {truck.region}</p>
                                             <p style={{ margin: '0.25rem 0 0 0', color: 'var(--accent-admin)', fontSize: '0.75rem', fontWeight: 600 }}>Route: {truck.route || 'N/A'}</p>
                                         </div>
                                     </div>
@@ -351,8 +380,22 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                     </div>
                                 </div>
 
+                                {/* Engineer View: Health & Maintenance */}
+                                {user?.role === 'engineer' && (
+                                    <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                                            <span style={{ color: 'var(--text-secondary)' }}>Health</span>
+                                            <span style={{ color: truck.health && truck.health > 80 ? 'var(--status-good)' : 'var(--status-danger)', fontWeight: 600 }}>{truck.health || 100}%</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                                            <span>Last: {truck.lastService}</span>
+                                            <span>Next: 2 Weeks</span>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--accent-admin)', fontSize: '0.875rem', fontWeight: 500 }}>
-                                    View Full Details <ChevronRight size={16} />
+                                    {user?.role === 'engineer' ? 'Update Status' : 'View Full Details'} <ChevronRight size={16} />
                                 </div>
                             </div>
                         ))
@@ -408,8 +451,11 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                         </div>
                                         <div>
                                             <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Bin #{bin.id}</h3>
-                                            <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>{bin.location || 'IoT Enabled'}</p>
-                                            {bin.cost && <p style={{ margin: '0.25rem 0 0 0', color: 'var(--status-warning)', fontSize: '0.75rem' }}>Cost: {bin.cost} SAR</p>}
+                                            <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>{bin.location || 'IoT Enabled'} • {bin.region}</p>
+                                            {bin.overflowStatus && <div style={{ color: 'var(--status-danger)', fontSize: '0.75rem', fontWeight: 700, marginTop: '0.25rem' }}>⚠️ OVERFLOW DETECTED</div>}
+                                            <div style={{ marginTop: '0.5rem', width: '100%', height: '4px', background: 'var(--bg-panel)', borderRadius: '2px' }}>
+                                                <div style={{ width: `${bin.health || 100}%`, height: '100%', background: bin.health > 50 ? 'var(--status-good)' : 'var(--status-danger)', borderRadius: '2px' }} />
+                                            </div>
                                         </div>
                                     </div>
 
@@ -440,8 +486,22 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                     </div>
                                 </div>
 
+                                {/* Engineer View: Health & Maintenance */}
+                                {user?.role === 'engineer' && (
+                                    <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                                            <span style={{ color: 'var(--text-secondary)' }}>Sensor Health</span>
+                                            <span style={{ color: 'var(--status-good)', fontWeight: 600 }}>Optimal</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                                            <span>Last Clean: {bin.lastCollection}</span>
+                                            <span>Battery: 85%</span>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--accent-manager)', fontSize: '0.875rem', fontWeight: 500 }}>
-                                    View Full Details <ChevronRight size={16} />
+                                    {user?.role === 'engineer' ? 'Update Status' : 'View Full Details'} <ChevronRight size={16} />
                                 </div>
                             </div>
                         ))
@@ -815,7 +875,7 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                 }}>
                     <div className="card" style={{ width: '400px', padding: '2rem', animation: 'slideIn 0.3s ease' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <h2 style={{ margin: 0 }}>Truck Details</h2>
+                            <h2 style={{ margin: 0 }}>Truck Details {user?.role === 'engineer' && '(Maintenance)'}</h2>
                             <button onClick={() => setSelectedTruck(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -823,15 +883,75 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                 <span style={{ color: 'var(--text-secondary)' }}>ID:</span>
                                 <span>{selectedTruck.code}</span>
                             </div>
+
+                            {user?.role === 'engineer' ? (
+                                <>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ color: 'var(--text-secondary)' }}>Status:</span>
+                                        <select
+                                            defaultValue={selectedTruck.status}
+                                            id="truck-status-select"
+                                            style={{
+                                                padding: '0.25rem',
+                                                borderRadius: '4px',
+                                                background: 'var(--bg-main)',
+                                                color: 'white',
+                                                border: '1px solid var(--glass-border)'
+                                            }}
+                                        >
+                                            <option value="active">Active</option>
+                                            <option value="maintenance">Maintenance</option>
+                                            <option value="repair">Under Repair</option>
+                                        </select>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <label style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Maintenance Log</label>
+                                        <textarea
+                                            value={maintenanceNotes}
+                                            onChange={(e) => setMaintenanceNotes(e.target.value)}
+                                            placeholder="Describe issue or service performed..."
+                                            rows={3}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.5rem',
+                                                borderRadius: 'var(--radius-sm)',
+                                                background: 'var(--bg-main)',
+                                                border: '1px solid var(--glass-border)',
+                                                color: 'white'
+                                            }}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            const statusSelect = document.getElementById('truck-status-select') as HTMLSelectElement;
+                                            handleUpdateAssetStatus('truck', selectedTruck.id, statusSelect.value);
+                                        }}
+                                        style={{
+                                            marginTop: '1rem',
+                                            padding: '0.75rem',
+                                            background: 'var(--accent-admin)',
+                                            border: 'none',
+                                            borderRadius: 'var(--radius-sm)',
+                                            color: 'white',
+                                            fontWeight: 600,
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        Save Maintenance Status
+                                    </button>
+                                </>
+                            ) : (
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>Status:</span>
+                                    <span style={{ color: selectedTruck.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)' }}>
+                                        {selectedTruck.status.toUpperCase()}
+                                    </span>
+                                </div>
+                            )}
+
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ color: 'var(--text-secondary)' }}>Type:</span>
                                 <span>{selectedTruck.type}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Status:</span>
-                                <span style={{ color: selectedTruck.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)' }}>
-                                    {selectedTruck.status.toUpperCase()}
-                                </span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ color: 'var(--text-secondary)' }}>Route:</span>
@@ -866,7 +986,7 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                 }}>
                     <div className="card" style={{ width: '400px', padding: '2rem', animation: 'slideIn 0.3s ease' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <h2 style={{ margin: 0 }}>Bin Details</h2>
+                            <h2 style={{ margin: 0 }}>Bin Details {user?.role === 'engineer' && '(Maintenance)'}</h2>
                             <button onClick={() => setSelectedBin(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -874,15 +994,75 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                                 <span style={{ color: 'var(--text-secondary)' }}>ID:</span>
                                 <span>{selectedBin.id}</span>
                             </div>
+
+                            {user?.role === 'engineer' ? (
+                                <>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ color: 'var(--text-secondary)' }}>Status:</span>
+                                        <select
+                                            defaultValue={selectedBin.status}
+                                            id="bin-status-select"
+                                            style={{
+                                                padding: '0.25rem',
+                                                borderRadius: '4px',
+                                                background: 'var(--bg-main)',
+                                                color: 'white',
+                                                border: '1px solid var(--glass-border)'
+                                            }}
+                                        >
+                                            <option value="active">Active</option>
+                                            <option value="maintenance">Maintenance</option>
+                                            <option value="broken">Broken</option>
+                                        </select>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <label style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Repair Log</label>
+                                        <textarea
+                                            value={maintenanceNotes}
+                                            onChange={(e) => setMaintenanceNotes(e.target.value)}
+                                            placeholder="Describe repair actions..."
+                                            rows={3}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.5rem',
+                                                borderRadius: 'var(--radius-sm)',
+                                                background: 'var(--bg-main)',
+                                                border: '1px solid var(--glass-border)',
+                                                color: 'white'
+                                            }}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            const statusSelect = document.getElementById('bin-status-select') as HTMLSelectElement;
+                                            handleUpdateAssetStatus('bin', selectedBin.id, statusSelect.value);
+                                        }}
+                                        style={{
+                                            marginTop: '1rem',
+                                            padding: '0.75rem',
+                                            background: 'var(--accent-admin)',
+                                            border: 'none',
+                                            borderRadius: 'var(--radius-sm)',
+                                            color: 'white',
+                                            fontWeight: 600,
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        Save Repair Status
+                                    </button>
+                                </>
+                            ) : (
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>Status:</span>
+                                    <span style={{ color: selectedBin.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)' }}>
+                                        {selectedBin.status.toUpperCase()}
+                                    </span>
+                                </div>
+                            )}
+
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ color: 'var(--text-secondary)' }}>Location:</span>
                                 <span>{selectedBin.location || 'N/A'}</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Status:</span>
-                                <span style={{ color: selectedBin.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)' }}>
-                                    {selectedBin.status.toUpperCase()}
-                                </span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ color: 'var(--text-secondary)' }}>Fill Level:</span>

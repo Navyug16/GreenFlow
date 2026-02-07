@@ -16,17 +16,23 @@ export interface KpiStat {
   color?: string;
 }
 
+export type RouteStatus = 'active' | 'delayed' | 'completed' | 'pending' | 'in_progress' | 'maintenance';
+
 export interface Route {
   id: string;
-  name: string; // Added from mock data
-  driverName: string;
+  name: string;
+  region: string;
+  driver: string;
   truckId: string;
-  vehicle: string; // Added from mock data (e.g., 'Compactor T-01')
-  status: 'active' | 'completed' | 'pending' | 'in_progress' | 'maintenance';
-  fillLevel: number;
-  progress: number; // Added from mock data
-  efficiency: number; // Added from mock data
-  coordinates: [number, number][]; // Simple path
+  vehicle: string;
+  assignedBinIds: string[];
+  status: RouteStatus;
+  distance: number; // km
+  efficiency: number; // 0-100
+  currentFuelCost: number; // SAR
+  fillLevel?: number; // Optional as it might be calculated dynamic
+  progress: number;
+  currentPath: [number, number][];
 }
 
 export interface Incident {
@@ -43,23 +49,33 @@ export interface Facility {
   name: string;
   type: 'energy' | 'recycle' | 'dumpyard';
   status: 'operational' | 'maintenance' | 'offline';
-  output: number; // e.g., KW or Tons
+  region: string;
+  capacity: number;
+  currentLoad: number;
+  incomingWaste: number;
+  wasteCategory: string[];
+  output: number;
+  revenue: number;
   description?: string;
+  lastServiceDate?: string;
 }
 
 export interface Truck {
   id: string;
   code: string;
   type: string;
-  status: string;
-  fuel: number;
-  mileage: number;
+  status: string; // 'active' | 'maintenance' | 'inactive'
+  health: number; // 0-100
+  region: string;
+  fuel: number; // Fuel level % or Liters
+  mileage: number; // Distance covered
   lastService: string;
   driver?: string;
   plate?: string;
   capacity?: string;
   totalHours?: number;
-  route?: string;
+  routeId?: string; // Link to Route ID
+  route?: string; // Display Name
 }
 
 export interface Bin {
@@ -67,10 +83,26 @@ export interface Bin {
   lat: number;
   lng: number;
   fillLevel: number;
+  health: number; // 0-100
+  region: string;
+  overflowStatus: boolean;
   status: string;
   lastCollection: string;
   location?: string;
   cost?: number;
+  routeId?: string;
+}
+
+export interface Machine {
+  id: string;
+  name: string;
+  type: string;
+  status: 'operational' | 'maintenance' | 'warning' | 'repair';
+  health: number; // 0-100
+  region: string;
+  facilityId: string;
+  lastMaintenance: string;
+  nextDue: string;
 }
 
 export interface Request {
