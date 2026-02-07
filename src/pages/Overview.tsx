@@ -7,7 +7,7 @@ import {
     ADMIN_STATS, MANAGER_STATS, ENGINEER_STATS,
     RECENT_INCIDENTS
 } from '../data/mockData';
-import { AlertTriangle, CheckCircle } from 'lucide-react';
+
 
 import { FinanceDashboard } from '../components/FinanceDashboard';
 
