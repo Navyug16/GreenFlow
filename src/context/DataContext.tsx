@@ -32,6 +32,9 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
+    useEffect(() => {
+        // console.log("DataProvider mounted");
+    }, []);
     const [trucks, setTrucks] = useState<Truck[]>(INITIAL_TRUCKS as unknown as Truck[]);
     const [bins, setBins] = useState<Bin[]>(INITIAL_BINS as unknown as Bin[]);
     const [facilities, setFacilities] = useState<Facility[]>(INITIAL_FACILITIES);
@@ -99,10 +102,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
                 });
             });
 
-        }, 5000); // 5 Seconds per tick (Slower than "very fast")
+        }, 10000); // 10 Seconds per tick (Reduced frequency for performance)
 
         return () => clearInterval(interval);
-    }, [routes]); // Depend on routes if we need to read them, though purely state functional update is safer
+    }, []);
 
     useEffect(() => {
         if (!db) return;

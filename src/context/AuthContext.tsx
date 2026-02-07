@@ -20,8 +20,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    // Default to NULL (Not authenticated)
-    const [user, setUser] = useState<User | null>(null);
+    // Default to NULL (Not authenticated) or check localStorage
+    const [user, setUser] = useState<User | null>(() => {
+        const savedUser = localStorage.getItem('greenflow_user');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
     const [authError, setAuthError] = useState<string | null>(null);
     const [auditLog, setAuditLog] = useState<{ id: number; user: string; action: string; time: string; type: string }[]>([]);
     const [isRoleSelectorOpen, setIsRoleSelectorOpen] = useState(false);
@@ -39,7 +42,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!auth) return;
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             // Logic kept for potential firebase integration, but primary auth for this demo is credential-based
-            if (!firebaseUser) setUser(null);
+            if (!firebaseUser) {
+                // only clear if we strictly want firebase binding, but since we use local creds, we might want to ignore this clearing
+                // setUser(null); 
+            }
         });
         return () => unsubscribe();
     }, []);
@@ -53,12 +59,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (userCreds && userCreds.password === password) {
             const role = userCreds.role as UserRole;
-            setUser({
+            const newUser = {
                 id: `u-demo-${role}`,
                 name: userCreds.name,
                 role: role,
                 avatar: userCreds.avatar
-            });
+            };
+            setUser(newUser);
+            localStorage.setItem('greenflow_user', JSON.stringify(newUser));
             return;
         }
 
@@ -76,6 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
         }
         setUser(null);
+        localStorage.removeItem('greenflow_user');
     };
 
     const switchRole = (role: UserRole) => {
@@ -97,6 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
 
         setUser(newUser);
+        localStorage.setItem('greenflow_user', JSON.stringify(newUser));
 
         // Add to audit log
         const logEntry = {

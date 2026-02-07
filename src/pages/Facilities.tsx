@@ -23,10 +23,10 @@ const FacilitiesPage = () => {
 
     const getColor = (type: string) => {
         switch (type) {
-            case 'energy': return 'var(--accent-engineer)'; // Yellow/Orange
-            case 'dumpyard': return 'var(--accent-danger)'; // Red/Brown
-            case 'recycle': return 'var(--accent-manager)'; // Green
-            default: return 'var(--text-primary)';
+            case 'energy': return '#fbbf24'; // var(--accent-engineer)
+            case 'dumpyard': return '#ef4444'; // var(--accent-danger)
+            case 'recycle': return '#34d399'; // var(--accent-manager)
+            default: return '#f1f5f9'; // var(--text-primary)
         }
     };
 
@@ -83,13 +83,14 @@ const FacilitiesPage = () => {
 
             {/* Facilities List */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-                {facilities.map(facility => {
+                {Array.isArray(facilities) && facilities.map(facility => {
+                    if (!facility) return null;
                     const Icon = getIcon(facility.type);
                     const color = getColor(facility.type);
 
                     return (
                         <div key={facility.id} className="card" style={{ position: 'relative', overflow: 'hidden' }}>
-                            {facility.name.includes('West') && facility.type === 'dumpyard' && (
+                            {facility.name?.includes('West') && facility.type === 'dumpyard' && (
                                 <div style={{
                                     position: 'absolute',
                                     top: 0,
@@ -119,7 +120,7 @@ const FacilitiesPage = () => {
                                     <div>
                                         <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{facility.name}</h3>
                                         <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-tertiary)', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                            {facility.region} • {facility.type.replace('_', ' ')}
+                                            {facility.region} • {facility.type?.replace('_', ' ')}
                                         </p>
                                     </div>
                                 </div>
@@ -137,7 +138,7 @@ const FacilitiesPage = () => {
                                     gap: '0.25rem'
                                 }}>
                                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }}></span>
-                                    {facility.status.toUpperCase()}
+                                    {facility.status?.toUpperCase()}
                                 </div>
                             </div>
 
@@ -153,7 +154,7 @@ const FacilitiesPage = () => {
                                 </div>
                                 <div style={{ background: 'var(--bg-main)', padding: '0.75rem', borderRadius: '8px' }}>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '0.25rem' }}>Revenue</div>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--status-good)' }}>SAR {facility.revenue.toLocaleString()}</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--status-good)' }}>SAR {facility.revenue?.toLocaleString()}</div>
                                 </div>
                             </div>
 
@@ -172,13 +173,13 @@ const FacilitiesPage = () => {
                                     }} />
                                 </div>
                                 <div style={{ textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
-                                    {facility.currentLoad.toLocaleString()} / {facility.capacity.toLocaleString()} Tons
+                                    {facility.currentLoad?.toLocaleString()} / {facility.capacity?.toLocaleString()} Tons
                                 </div>
                             </div>
 
                             {/* Categories */}
                             <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                {facility.wasteCategory.map(cat => (
+                                {facility.wasteCategory?.map(cat => (
                                     <span key={cat} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)' }}>
                                         {cat}
                                     </span>

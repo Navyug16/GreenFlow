@@ -1,17 +1,34 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import Layout from './components/Layout';
-import Overview from './pages/Overview';
-import Login from './pages/Login';
-import RoutesPage from './pages/Routes';
-import AssetsPage from './pages/Assets';
-import PlaceholderPage from './components/PlaceholderPage';
-import FacilitiesPage from './pages/Facilities';
-import IncidentsPage from './pages/Incidents';
-import MachineryPage from './pages/Machinery';
-import AdminPage from './pages/Admin';
-import FinancePage from './pages/Finance';
+
+// Lazy Load Pages
+const Overview = lazy(() => import('./pages/Overview'));
+const Login = lazy(() => import('./pages/Login'));
+const RoutesPage = lazy(() => import('./pages/Routes'));
+const AssetsPage = lazy(() => import('./pages/Assets'));
+const PlaceholderPage = lazy(() => import('./components/PlaceholderPage'));
+const FacilitiesPage = lazy(() => import('./pages/Facilities'));
+const IncidentsPage = lazy(() => import('./pages/Incidents'));
+const MachineryPage = lazy(() => import('./pages/Machinery'));
+const AdminPage = lazy(() => import('./pages/Admin'));
+const FinancePage = lazy(() => import('./pages/Finance'));
+
+// Loading Fallback
+const LoadingSpinner = () => (
+  <div style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    background: 'var(--bg-main)',
+    color: 'var(--text-primary)'
+  }}>
+    Loading GreenFlow...
+  </div>
+);
 
 // Protected Route Component
 const ProtectedRoute = () => {
@@ -25,30 +42,32 @@ function App() {
     <AuthProvider>
       <DataProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
 
-            <Route element={<ProtectedRoute />}>
-              <Route path="/" element={<Layout />}>
-                <Route index element={<Overview />} />
+              <Route element={<ProtectedRoute />}>
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Overview />} />
 
-                {/* Admin Routes */}
-                <Route path="routes" element={<RoutesPage />} />
-                <Route path="assets" element={<AssetsPage />} />
-                <Route path="facilities" element={<FacilitiesPage />} />
-                <Route path="incidents" element={<IncidentsPage />} />
-                <Route path="cctv" element={<PlaceholderPage title="CCTV" />} />
-                <Route path="admin-users" element={<AdminPage />} />
-                <Route path="finance" element={<FinancePage />} />
+                  {/* Admin Routes */}
+                  <Route path="routes" element={<RoutesPage />} />
+                  <Route path="assets" element={<AssetsPage />} />
+                  <Route path="facilities" element={<FacilitiesPage />} />
+                  <Route path="incidents" element={<IncidentsPage />} />
+                  <Route path="cctv" element={<PlaceholderPage title="CCTV" />} />
+                  <Route path="admin-users" element={<AdminPage />} />
+                  <Route path="finance" element={<FinancePage />} />
 
-                {/* Engineer Routes */}
-                <Route path="bins" element={<AssetsPage defaultTab="bins" hideTabs={true} />} />
-                <Route path="trucks" element={<AssetsPage defaultTab="trucks" hideTabs={true} />} />
-                <Route path="machinery" element={<MachineryPage />} />
+                  {/* Engineer Routes */}
+                  <Route path="bins" element={<AssetsPage defaultTab="bins" hideTabs={true} />} />
+                  <Route path="trucks" element={<AssetsPage defaultTab="trucks" hideTabs={true} />} />
+                  <Route path="machinery" element={<MachineryPage />} />
+                </Route >
               </Route >
-            </Route >
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes >
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes >
+          </Suspense>
         </BrowserRouter >
       </DataProvider >
     </AuthProvider >
