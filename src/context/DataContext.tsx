@@ -42,6 +42,69 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const [users, setUsers] = useState<User[]>([]);
 
     useEffect(() => {
+        // SIMULATION LOOP
+        const interval = setInterval(() => {
+            // 1. Slow Bin Filling
+            setBins(prevBins => prevBins.map(bin => {
+                // Slower fill rate: 0.5% - 2% per tick (was likely higher or static before)
+                const fillIncrement = Math.random() * 1.5;
+                let newLevel = bin.fillLevel + fillIncrement;
+                if (newLevel > 100) newLevel = 100;
+
+                // Overflow logic
+                const isOverflowing = newLevel >= 95;
+
+                return {
+                    ...bin,
+                    fillLevel: parseFloat(newLevel.toFixed(1)),
+                    overflowStatus: isOverflowing,
+                    status: isOverflowing ? 'critical' : bin.status
+                };
+            }));
+
+            // 2. Truck Movement & Logic
+            setTrucks(prevTrucks => {
+                return prevTrucks.map(truck => {
+                    if (truck.status !== 'active') return truck;
+
+                    let currentLoad = truck.currentLoad || 0;
+
+                    // A. Check Capacity
+                    if (currentLoad >= 90) {
+                        // GO TO FACILITY
+                        // Find nearest facility (Mock: defaults to region specific or first one)
+                        // In a real app, calculate distance. Here we simulate 'dumping' if not already there
+                        if (Math.random() > 0.8) { // Simulate travel time
+                            currentLoad = 0; // Dumped
+                            // console.log(`Truck ${truck.code} dumped waste at facility.`);
+                        }
+                        return { ...truck, currentLoad };
+                    }
+
+                    // B. Route Logic
+                    // If route completed (mock: simply probabilistic or standard path)
+                    // For this simulation, we'll assume trucks are constantly "patrolling" their route
+
+                    // C. "Smart" Logic: If idle/patrolling and nearby bin is critical
+                    // Find critical bin in same region not assigned/collected recently
+                    // This is complex to mock purely with state without a map engine running here, 
+                    // so we simulate the RESULT of that logic:
+
+                    // If truck has capacity and random chance hits, it collects waste
+                    if (currentLoad < 90 && Math.random() > 0.7) {
+                        currentLoad += 5; // Collected 5% capacity worth of waste
+                    }
+
+                    return { ...truck, currentLoad };
+                });
+            });
+
+        }, 5000); // 5 Seconds per tick (Slower than "very fast")
+
+        return () => clearInterval(interval);
+    }, [routes]); // Depend on routes if we need to read them, though purely state functional update is safer
+
+    useEffect(() => {
         if (!db) return;
 
         console.log("Connecting to Firestore...");

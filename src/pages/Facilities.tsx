@@ -1,6 +1,7 @@
 import { Factory, Zap, Trash2, Activity, AlertTriangle } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import MapWidget from '../components/MapWidget';
 
 const FacilitiesPage = () => {
     const { user } = useAuth();
@@ -9,7 +10,7 @@ const FacilitiesPage = () => {
         return <div style={{ padding: '2rem', color: 'white' }}>Access Restricted: Engineers view specific machinery via the dedicated module.</div>;
     }
 
-    const { facilities } = useData();
+    const { facilities = [] } = useData();
 
     const getIcon = (type: string) => {
         switch (type) {
@@ -38,8 +39,17 @@ const FacilitiesPage = () => {
         }
     };
 
+
+
+    // ... (existing imports/code)
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Facility Map View */}
+            <div className="card" style={{ height: '400px', padding: '0.5rem' }}>
+                <MapWidget showBins={false} />
+            </div>
+
             {/* Header / Overview */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
                 <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.05))', border: '1px solid rgba(34, 197, 94, 0.2)' }}>

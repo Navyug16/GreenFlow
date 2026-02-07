@@ -48,85 +48,147 @@ export const RECENT_INCIDENTS: Incident[] = [
 export const FACILITIES: Facility[] = [
     {
         id: 'F1',
-        name: 'Central Recycling Unit',
-        type: 'recycle',
-        status: 'operational',
-        region: 'Central Riyadh',
-        capacity: 1000,
-        currentLoad: 450,
-        incomingWaste: 120, // tons/day
-        wasteCategory: ['Plastic', 'Paper', 'Metal'],
-        output: 380, // Recycled tons
-        revenue: 15000, // SAR/day
-        description: 'Advanced sorting and recycling facility for dry waste.',
-        lastServiceDate: '2026-01-15'
-    },
-    {
-        id: 'F2',
-        name: 'South Dump Yard',
+        name: 'Dump Yard – Riyadh North',
         type: 'dumpyard',
         status: 'operational',
-        region: 'South Riyadh',
+        region: 'North Riyadh',
         capacity: 5000,
         currentLoad: 3200,
         incomingWaste: 450,
         wasteCategory: ['Organic', 'Mixed'],
         output: 0,
         revenue: 0,
-        description: 'Primary disposal site for non-recyclable waste.',
-        lastServiceDate: '2025-12-10'
+        operatingCost: 12000,
+        description: 'Primary disposal site for North Riyadh waste.',
+        lastServiceDate: '2026-01-15',
+        lat: 24.8341,
+        lng: 46.6370
+    },
+    {
+        id: 'F2',
+        name: 'Dump Yard – Riyadh South',
+        type: 'dumpyard',
+        status: 'operational',
+        region: 'South Riyadh',
+        capacity: 4500,
+        currentLoad: 2800,
+        incomingWaste: 400,
+        wasteCategory: ['Mixed', 'Construction'],
+        output: 0,
+        revenue: 0,
+        operatingCost: 11000,
+        description: 'Disposal site for South Riyadh and construction waste.',
+        lastServiceDate: '2025-12-10',
+        lat: 24.5247,
+        lng: 46.7224
     },
     {
         id: 'F3',
-        name: 'North Energy Plant',
-        type: 'energy',
+        name: 'Recycling Unit – Industrial City (Sudair)',
+        type: 'recycle',
         status: 'operational',
-        region: 'North Riyadh',
-        capacity: 2000,
-        currentLoad: 1400,
-        incomingWaste: 600,
-        wasteCategory: ['Combustible', 'Organic'],
-        output: 4500, // kW
-        revenue: 28000,
-        description: 'Waste-to-Energy incineration plant.',
-        lastServiceDate: '2026-01-28'
+        region: 'Sudair Industrial',
+        capacity: 1000,
+        currentLoad: 450,
+        incomingWaste: 120,
+        wasteCategory: ['Plastic', 'Paper', 'Metal'],
+        output: 380,
+        revenue: 15000,
+        operatingCost: 8500,
+        description: 'Large scale industrial recycling facility.',
+        lastServiceDate: '2026-01-20',
+        lat: 25.0186,
+        lng: 47.2956
     },
     {
         id: 'F4',
-        name: 'West Dump Yard',
-        type: 'dumpyard',
+        name: 'Recycling Unit – Riyadh Industrial Area',
+        type: 'recycle',
         status: 'maintenance',
-        region: 'West Riyadh',
-        capacity: 3000,
-        currentLoad: 2900,
-        incomingWaste: 0, // Restricted
-        wasteCategory: ['Hazardous', 'Mixed'],
+        region: 'Industrial Area',
+        capacity: 1200,
+        currentLoad: 800,
+        incomingWaste: 0, // Maintenance
+        wasteCategory: ['Industrial', 'Metal'],
         output: 0,
         revenue: 0,
-        description: 'Restricted access due to environmental regulations.',
-        lastServiceDate: '2026-02-01'
+        operatingCost: 4000,
+        description: 'Central industrial recycling hub.',
+        lastServiceDate: '2026-02-01',
+        lat: 24.5856,
+        lng: 46.7532
+    },
+    {
+        id: 'F5',
+        name: 'Waste-to-Energy Plant – Outskirts of Riyadh',
+        type: 'energy',
+        status: 'operational',
+        region: 'Riyadh Outskirts',
+        capacity: 2500,
+        currentLoad: 1800,
+        incomingWaste: 600,
+        wasteCategory: ['Combustible', 'Organic'],
+        output: 5000, // kW
+        revenue: 35000,
+        operatingCost: 20000,
+        description: 'Main incineration plant for city waste.',
+        lastServiceDate: '2026-01-28',
+        lat: 24.9062,
+        lng: 46.4189
+    },
+    {
+        id: 'F6',
+        name: 'Waste-to-Energy Plant – Central Region',
+        type: 'energy',
+        status: 'operational',
+        region: 'Central Riyadh',
+        capacity: 1500,
+        currentLoad: 900,
+        incomingWaste: 300,
+        wasteCategory: ['Organic'],
+        output: 2500,
+        revenue: 18000,
+        operatingCost: 12000,
+        description: 'Central energy recovery unit.',
+        lastServiceDate: '2026-02-02',
+        lat: 24.7117,
+        lng: 46.6740
     }
 ];
 
-
-
-// Imported Bins with approximate coordinates in Riyadh
+// Updated Bins clustered around new Riyadh facilities
 export const BINS: Bin[] = [
-    { id: 'B-01', lat: 24.6905, lng: 46.6855, fillLevel: 45, status: 'active', health: 100, region: 'Central Riyadh', overflowStatus: false, lastCollection: '2 hours ago', location: 'Al Faisaliah Tower – Service Entrance', cost: 6800, routeId: 'T1' },
-    { id: 'B-02', lat: 24.6960, lng: 46.6810, fillLevel: 72, status: 'active', health: 95, region: 'Central Riyadh', overflowStatus: false, lastCollection: '4 hours ago', location: 'Olaya Street – Al Andalus Intersection', cost: 6200, routeId: 'T1' },
-    { id: 'B-03', lat: 24.7115, lng: 46.6745, fillLevel: 88, status: 'active', health: 90, region: 'Central Riyadh', overflowStatus: false, lastCollection: '1 day ago', location: 'Kingdom Centre Tower – Parking Access', cost: 7000, routeId: 'T1' },
-    { id: 'B-04', lat: 24.6655, lng: 46.7255, fillLevel: 25, status: 'active', health: 75, region: 'Central Riyadh', overflowStatus: false, lastCollection: '30 mins ago', location: 'Al Malaz Park – Main Gate', cost: 5200, routeId: 'T2' },
-    { id: 'B-05', lat: 24.6700, lng: 46.7300, fillLevel: 60, status: 'active', health: 85, region: 'Central Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'Salahuddin Al Ayyubi Road – Residential Block', cost: 4800, routeId: 'T2' },
-    { id: 'B-06', lat: 24.6600, lng: 46.7200, fillLevel: 35, status: 'active', health: 80, region: 'Central Riyadh', overflowStatus: false, lastCollection: '1 day ago', location: 'King Abdullah Park – South Entrance', cost: 5500, routeId: 'T2' },
-    { id: 'B-07', lat: 24.6005, lng: 46.8005, fillLevel: 92, status: 'maintenance', health: 40, region: 'South Riyadh', overflowStatus: true, lastCollection: '2 days ago', location: 'Riyadh Second Industrial City – Gate 1', cost: 7500, routeId: 'T3' },
-    { id: 'B-08', lat: 24.5950, lng: 46.8050, fillLevel: 80, status: 'active', health: 92, region: 'South Riyadh', overflowStatus: false, lastCollection: '6 hours ago', location: 'Al Kharj Road – Industrial Transfer Point', cost: 6900, routeId: 'T3' },
-    { id: 'B-09', lat: 24.9505, lng: 46.7005, fillLevel: 15, status: 'active', health: 98, region: 'North Riyadh', overflowStatus: false, lastCollection: '10 mins ago', location: 'King Khalid International Airport – Terminal 5 Drop Zone', cost: 8200, routeId: 'T4' },
-    { id: 'B-10', lat: 24.9450, lng: 46.6950, fillLevel: 40, status: 'active', health: 88, region: 'North Riyadh', overflowStatus: false, lastCollection: '1 hour ago', location: 'Airport Road – Cargo Village Access', cost: 7800, routeId: 'T4' },
-    { id: 'B-11', lat: 24.7555, lng: 46.6305, fillLevel: 65, status: 'active', health: 94, region: 'North Riyadh', overflowStatus: false, lastCollection: '3 hours ago', location: 'Riyadh Park Mall – North Entrance', cost: 6700, routeId: 'T5' },
-    { id: 'B-12', lat: 24.7600, lng: 46.6350, fillLevel: 55, status: 'active', health: 96, region: 'North Riyadh', overflowStatus: false, lastCollection: '4 hours ago', location: 'IKEA Riyadh – Loading Bay Area', cost: 6300, routeId: 'T5' },
-    { id: 'B-13', lat: 24.7700, lng: 46.7800, fillLevel: 30, status: 'active', health: 89, region: 'East Riyadh', overflowStatus: false, lastCollection: '1 day ago', location: 'Al Nahda District – Community Center', cost: 4600, routeId: 'T6' },
-    { id: 'B-14', lat: 24.7850, lng: 46.7400, fillLevel: 75, status: 'active', health: 91, region: 'East Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'Granada Mall – Public Parking Area', cost: 6400, routeId: 'T6' },
-    { id: 'B-15', lat: 24.6805, lng: 46.6205, fillLevel: 20, status: 'active', health: 99, region: 'Central Riyadh', overflowStatus: false, lastCollection: '2 hours ago', location: 'Diplomatic Quarter – Main Gate Bus Stop', cost: 5900, routeId: 'T7' },
+    // Near F1 (North Dump Yard - 24.8341, 46.6370)
+    { id: 'B-01', lat: 24.8350, lng: 46.6380, fillLevel: 45, status: 'active', health: 100, region: 'North Riyadh', overflowStatus: false, lastCollection: '2 hours ago', location: 'North District Market', cost: 6800, routeId: 'T1' },
+    { id: 'B-02', lat: 24.8360, lng: 46.6360, fillLevel: 72, status: 'active', health: 95, region: 'North Riyadh', overflowStatus: false, lastCollection: '4 hours ago', location: 'Qirawan Residential', cost: 6200, routeId: 'T1' },
+    { id: 'B-03', lat: 24.8330, lng: 46.6390, fillLevel: 88, status: 'active', health: 90, region: 'North Riyadh', overflowStatus: false, lastCollection: '1 day ago', location: 'North Commercial Strip', cost: 7000, routeId: 'T1' },
+
+    // Near F6 (Central Energy - 24.7117, 46.6740)
+    { id: 'B-04', lat: 24.7120, lng: 46.6750, fillLevel: 25, status: 'active', health: 75, region: 'Central Riyadh', overflowStatus: false, lastCollection: '30 mins ago', location: 'Kingdom Centre Area', cost: 5200, routeId: 'T7' },
+    { id: 'B-05', lat: 24.7100, lng: 46.6730, fillLevel: 60, status: 'active', health: 85, region: 'Central Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'Olaya Street', cost: 4800, routeId: 'T7' },
+    { id: 'B-15', lat: 24.7130, lng: 46.6760, fillLevel: 20, status: 'active', health: 99, region: 'Central Riyadh', overflowStatus: false, lastCollection: '2 hours ago', location: 'Al Faisaliah Proximity', cost: 5900, routeId: 'T7' },
+
+    // Near F2 (South Dump Yard - 24.5247, 46.7224)
+    { id: 'B-07', lat: 24.5250, lng: 46.7230, fillLevel: 92, status: 'maintenance', health: 40, region: 'South Riyadh', overflowStatus: true, lastCollection: '2 days ago', location: 'Aziziyah South', cost: 7500, routeId: 'T3' },
+    { id: 'B-08', lat: 24.5240, lng: 46.7210, fillLevel: 80, status: 'active', health: 92, region: 'South Riyadh', overflowStatus: false, lastCollection: '6 hours ago', location: 'South Ring Road Stop', cost: 6900, routeId: 'T3' },
+
+    // Near F4 (Riyadh Industrial - 24.5856, 46.7532)
+    { id: 'B-09', lat: 24.5860, lng: 46.7540, fillLevel: 15, status: 'active', health: 98, region: 'Industrial Area', overflowStatus: false, lastCollection: '10 mins ago', location: 'New Industrial Gate 1', cost: 8200, routeId: 'T2' },
+    { id: 'B-10', lat: 24.5850, lng: 46.7520, fillLevel: 40, status: 'active', health: 88, region: 'Industrial Area', overflowStatus: false, lastCollection: '1 hour ago', location: 'Factory Zone A', cost: 7800, routeId: 'T2' },
+
+    // Near F5 (Outskirts Energy - 24.9062, 46.4189)
+    { id: 'B-11', lat: 24.9070, lng: 46.4190, fillLevel: 65, status: 'active', health: 94, region: 'Riyadh Outskirts', overflowStatus: false, lastCollection: '3 hours ago', location: 'West Outskirts Village', cost: 6700, routeId: 'T4' },
+    { id: 'B-12', lat: 24.9050, lng: 46.4200, fillLevel: 55, status: 'active', health: 96, region: 'Riyadh Outskirts', overflowStatus: false, lastCollection: '4 hours ago', location: 'Diriya Approach', cost: 6300, routeId: 'T4' },
+
+    // Near F3 (Sudair Industrial - 25.0186, 47.2956) - A bit far, but keeping logical connection
+    { id: 'B-06', lat: 25.0190, lng: 47.2960, fillLevel: 35, status: 'active', health: 80, region: 'Sudair Industrial', overflowStatus: false, lastCollection: '1 day ago', location: 'Sudair Main Gate', cost: 5500, routeId: 'T6' },
+    { id: 'B-13', lat: 25.0180, lng: 47.2950, fillLevel: 30, status: 'active', health: 89, region: 'Sudair Industrial', overflowStatus: false, lastCollection: '1 day ago', location: 'Logistics Hub', cost: 4600, routeId: 'T6' },
+
+    // General West/Mixed
+    { id: 'B-16', lat: 24.6500, lng: 46.5500, fillLevel: 85, status: 'active', health: 80, region: 'West Riyadh', overflowStatus: false, lastCollection: '6 hours ago', location: 'Wadi Hanifa', cost: 4500, routeId: 'T8' },
+    { id: 'B-17', lat: 24.6600, lng: 46.5600, fillLevel: 65, status: 'active', health: 88, region: 'West Riyadh', overflowStatus: false, lastCollection: '3 hours ago', location: 'Irqah District', cost: 4200, routeId: 'T8' },
+    { id: 'B-18', lat: 24.6400, lng: 46.5400, fillLevel: 95, status: 'active', health: 70, region: 'West Riyadh', overflowStatus: true, lastCollection: '1 day ago', location: 'Laban Exit', cost: 4800, routeId: 'T8' },
+    { id: 'B-14', lat: 24.7500, lng: 46.6500, fillLevel: 75, status: 'active', health: 91, region: 'North Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'KAFD Area', cost: 6400, routeId: 'T5' },
 ];
 
 export const MACHINERY: Machine[] = [
@@ -158,8 +220,8 @@ export const TRUCKS: Truck[] = [
 export const TRUCK_ROUTES = [
     {
         id: 'T1',
-        name: 'Olaya Corridor',
-        region: 'Central Riyadh',
+        name: 'North Zone Route',
+        region: 'North Zone',
         truckId: '1',
         assignedBinIds: ['B-01', 'B-02', 'B-03'],
         distance: 12.5,
@@ -169,12 +231,12 @@ export const TRUCK_ROUTES = [
         status: 'in_progress',
         progress: 45,
         efficiency: 94,
-        currentPath: [[24.6905, 46.6855], [24.7115, 46.6745]] as [number, number][]
+        currentPath: [[23.0900, 72.5700], [23.0920, 72.5720]] as [number, number][]
     },
     {
         id: 'T2',
-        name: 'Al Malaz Park',
-        region: 'Central Riyadh',
+        name: 'East Industrial Route',
+        region: 'East Zone',
         truckId: '2',
         assignedBinIds: ['B-04', 'B-05', 'B-06'],
         distance: 8.2,
@@ -184,12 +246,12 @@ export const TRUCK_ROUTES = [
         status: 'active',
         progress: 20,
         efficiency: 89,
-        currentPath: [[24.6655, 46.7255], [24.6600, 46.7200]] as [number, number][]
+        currentPath: [[23.0250, 72.6350], [23.0270, 72.6370]] as [number, number][]
     },
     {
         id: 'T3',
-        name: 'Industrial City',
-        region: 'South Riyadh',
+        name: 'South Zone Route',
+        region: 'South Zone',
         truckId: '3',
         assignedBinIds: ['B-07', 'B-08'],
         distance: 24.0,
@@ -199,12 +261,12 @@ export const TRUCK_ROUTES = [
         status: 'delayed',
         progress: 0,
         efficiency: 10,
-        currentPath: [[24.6005, 46.8005], [24.5950, 46.8050]] as [number, number][]
+        currentPath: [[22.9780, 72.4900], [22.9800, 72.4920]] as [number, number][]
     },
     {
         id: 'T4',
-        name: 'Airport Logistics',
-        region: 'North Riyadh',
+        name: 'Outer Ring Route',
+        region: 'Ring Road',
         truckId: '4',
         assignedBinIds: ['B-09', 'B-10'],
         distance: 35.5,
@@ -214,12 +276,12 @@ export const TRUCK_ROUTES = [
         status: 'active',
         progress: 60,
         efficiency: 92,
-        currentPath: [[24.9505, 46.7005], [24.9450, 46.6950]] as [number, number][]
+        currentPath: [[23.1120, 72.6040], [23.1140, 72.6060]] as [number, number][]
     },
     {
         id: 'T5',
-        name: 'Northern Commercial',
-        region: 'North Riyadh',
+        name: 'West Industrial Route',
+        region: 'West Zone',
         truckId: '5',
         assignedBinIds: ['B-11', 'B-12'],
         distance: 18.2,
@@ -229,12 +291,12 @@ export const TRUCK_ROUTES = [
         status: 'active',
         progress: 10,
         efficiency: 88,
-        currentPath: [[24.7555, 46.6305], [24.7600, 46.6350]] as [number, number][]
+        currentPath: [[23.0580, 72.5130], [23.0600, 72.5150]] as [number, number][]
     },
     {
         id: 'T6',
-        name: 'Al Nahda Dist',
-        region: 'East Riyadh',
+        name: 'Peripheral Route',
+        region: 'Peripheral Zone',
         truckId: '6',
         assignedBinIds: ['B-13', 'B-14'],
         distance: 15.8,
@@ -244,12 +306,12 @@ export const TRUCK_ROUTES = [
         status: 'active',
         progress: 35,
         efficiency: 85,
-        currentPath: [[24.7700, 46.7800], [24.7850, 46.7400]] as [number, number][]
+        currentPath: [[22.9450, 72.5890], [22.9470, 72.5910]] as [number, number][]
     },
     {
         id: 'T7',
-        name: 'Ministry HQ',
-        region: 'Central Riyadh',
+        name: 'Central City Route',
+        region: 'Central Zone',
         truckId: '7',
         assignedBinIds: ['B-15'],
         distance: 5.5,
@@ -259,6 +321,21 @@ export const TRUCK_ROUTES = [
         status: 'active',
         progress: 80,
         efficiency: 95,
-        currentPath: [[24.6805, 46.6205], [24.6700, 46.6300]] as [number, number][]
+        currentPath: [[23.0300, 72.5800], [23.0310, 72.5810]] as [number, number][]
+    },
+    {
+        id: 'T8',
+        name: 'West Residential Route',
+        region: 'West Zone',
+        truckId: '8',
+        assignedBinIds: ['B-16', 'B-17', 'B-18'],
+        distance: 14.5,
+        currentFuelCost: 48.00,
+        driver: 'Kareem Abdul',
+        vehicle: 'Compactor T-08',
+        status: 'active',
+        progress: 60,
+        efficiency: 88,
+        currentPath: [[23.0500, 72.5200], [23.0520, 72.5190]] as [number, number][]
     }
 ];

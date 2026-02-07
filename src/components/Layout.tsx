@@ -3,7 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
-import RoleSelector from './RoleSelector';
+
 
 const Layout = () => {
     const location = useLocation();
@@ -19,7 +19,7 @@ const Layout = () => {
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-main)' }}>
             <Sidebar mobileOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
-            <RoleSelector />
+
 
             {/* Mobile Overlay */}
             {isSidebarOpen && (

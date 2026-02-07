@@ -8,7 +8,7 @@ import { doc, getDoc } from 'firebase/firestore';
 interface AuthContextType {
     user: User | null;
     isAuthenticated: boolean;
-    login: (role: UserRole) => Promise<void>; // Modified signature
+    login: (email: string, password?: string) => Promise<void>;
     logout: () => void;
     authError: string | null;
     switchRole: (role: UserRole) => void;
@@ -21,94 +21,51 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    // DEV: Default to Admin user with full profile to bypass login
-    const [user, setUser] = useState<User | null>({
-        id: 'dev-admin',
-        name: 'Ali Al-Ahmed',
-        role: 'admin',
-        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024d'
-    });
-    const [authError] = useState<string | null>(null);
+    // Default to NULL (Not authenticated)
+    const [user, setUser] = useState<User | null>(null);
+    const [authError, setAuthError] = useState<string | null>(null);
     const [auditLog, setAuditLog] = useState<{ id: number; user: string; action: string; time: string; type: string }[]>([]);
     const [isRoleSelectorOpen, setIsRoleSelectorOpen] = useState(false);
 
-    // Sync with Firebase Auth State
+    // Hardcoded Credentials for Demo
+    const CREDENTIALS = {
+        'admin@greenflow.sa': { role: 'admin', name: 'Ali Al-Ahmed', password: 'admin', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024d' },
+        'manager@greenflow.sa': { role: 'manager', name: 'Sara Al-Mansoori', password: 'manager', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' },
+        'engineer@greenflow.sa': { role: 'engineer', name: 'Omar Farooq', password: 'engineer', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026024d' },
+        'finance@greenflow.sa': { role: 'finance', name: 'Layla Hassan', password: 'finance', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' }
+    };
+
+    // Sync with Firebase Auth State (Optional fallback if we were using real Firebase Auth)
     useEffect(() => {
         if (!auth) return;
-
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            if (firebaseUser) {
-                // User is signed in, fetch role from Firestore
-                const userDocRef = doc(db, 'users', firebaseUser.uid);
-                const userDoc = await getDoc(userDocRef);
-
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    setUser({
-                        id: firebaseUser.uid,
-                        name: userData.name || firebaseUser.email || 'User',
-                        role: userData.role as UserRole,
-                        avatar: userData.avatar || 'https://i.pravatar.cc/150'
-                    });
-                } else {
-                    // Fallback if no user record in Firestore (should create one)
-                    setUser({
-                        id: firebaseUser.uid,
-                        name: firebaseUser.email || 'User',
-                        role: 'admin', // Default fallback
-                        avatar: 'https://i.pravatar.cc/150'
-                    });
-                }
-            } else {
-                // setUser(null); // DEV: Removed login credential requirement (commented out logout)
-            }
+            // Logic kept for potential firebase integration, but primary auth for this demo is credential-based
+            if (!firebaseUser) setUser(null);
         });
-
         return () => unsubscribe();
     }, []);
 
-    const login = async (role: UserRole) => {
-        // DEMO LOGIN (Keep existing behavior for easy testing without creating accounts)
-        // If you want real auth, you would use signInWithEmailAndPassword here
+    const login = async (email: string, password?: string) => {
+        // Clear previous errors
+        setAuthError(null);
 
-        if (!auth) {
-            // Fallback to mock login if firebase not ready
-            let name = 'Admin User';
-            let avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d';
+        // Check credentials from hardcoded list
+        const userCreds = CREDENTIALS[email as keyof typeof CREDENTIALS];
 
-            switch (role) {
-                case 'admin': name = 'Ali Al-Ahmed'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d'; break;
-                case 'manager': name = 'Sara Al-Mansoori'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026704d'; break;
-                case 'engineer': name = 'Omar Farooq'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d'; break;
-                case 'finance': name = 'Layla Hassan'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026704d'; break;
-            }
-
+        if (userCreds && userCreds.password === password) {
+            const role = userCreds.role as UserRole;
             setUser({
-                id: `u-${Date.now()}`,
-                name,
-                role,
-                avatar
+                id: `u-demo-${role}`,
+                name: userCreds.name,
+                role: role,
+                avatar: userCreds.avatar
             });
             return;
         }
 
-        // KEEPING EXISTING LOGIN LOGIC for the simplified UX requested
-        let name = 'Admin User';
-        let avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d';
-
-        switch (role) {
-            case 'admin': name = 'Ali Al-Ahmed'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d'; break;
-            case 'manager': name = 'Sara Al-Mansoori'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026704d'; break;
-            case 'engineer': name = 'Omar Farooq'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026024d'; break;
-            case 'finance': name = 'Layla Hassan'; avatar = 'https://i.pravatar.cc/150?u=a042581f4e29026704d'; break;
-        }
-
-        setUser({
-            id: `u-demo-${role}`, // Stable ID for demo
-            name,
-            role,
-            avatar
-        });
+        // Simulating error for invalid credentials
+        setAuthError("Invalid email or password");
+        throw new Error("Invalid credentials");
     };
 
     const logout = async () => {

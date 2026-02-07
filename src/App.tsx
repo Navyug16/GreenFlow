@@ -11,6 +11,7 @@ import FacilitiesPage from './pages/Facilities';
 import IncidentsPage from './pages/Incidents';
 import MachineryPage from './pages/Machinery';
 import AdminPage from './pages/Admin';
+import FinancePage from './pages/Finance';
 
 // Protected Route Component
 const ProtectedRoute = () => {
@@ -38,6 +39,7 @@ function App() {
                 <Route path="incidents" element={<IncidentsPage />} />
                 <Route path="cctv" element={<PlaceholderPage title="CCTV" />} />
                 <Route path="admin-users" element={<AdminPage />} />
+                <Route path="finance" element={<FinancePage />} />
 
                 {/* Engineer Routes */}
                 <Route path="bins" element={<AssetsPage defaultTab="bins" hideTabs={true} />} />

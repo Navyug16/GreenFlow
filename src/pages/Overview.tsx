@@ -57,105 +57,117 @@ const Overview = () => {
                 ))}
             </div>
 
-            {/* 2. Main Visual Area (Map + Incidents) */}
-            <div className="grid-desktop-2col" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', height: '600px' }}>
+            {/* 2. Main Visual Area */}
+            <div className="grid-desktop-2col" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', minHeight: '500px' }}>
 
+                {/* Left/Main Column: Map or Engineer List */}
+                <div className="card map-card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '500px' }}>
 
-                {/* Map Container */}
-                <div className="card map-card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between' }}>
-                        <h3 style={{ margin: 0 }}>
-                            {user.role === 'manager' ? 'West Region Operations' : 'Live Operations Map'}
-                        </h3>
-                        <span style={{ fontSize: '0.875rem', color: 'var(--accent-admin)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span className="pulse-dot" style={{ width: 8, height: 8, background: 'currentColor', borderRadius: '50%' }}></span>
-                            Live Feed
-                        </span>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <MapWidget />
-                    </div>
+                    {user.role !== 'engineer' ? (
+                        /* Standard Map View for Admin & Manager */
+                        <>
+                            <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <h3 style={{ margin: 0 }}>
+                                    {user.role === 'manager' ? 'West Region Live Map' : 'Live Operations Map'}
+                                </h3>
+                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                    {user.role === 'manager' && (
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Region: West Riyadh</span>
+                                    )}
+                                    <span style={{ fontSize: '0.875rem', color: 'var(--accent-admin)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span className="pulse-dot" style={{ width: 8, height: 8, background: 'currentColor', borderRadius: '50%' }}></span>
+                                        Real-time
+                                    </span>
+                                </div>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <MapWidget />
+                            </div>
+                        </>
+                    ) : (
+                        /* Engineer specific view: Critical Assets List + Map Preview */
+                        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)' }}>
+                                <h3 style={{ margin: 0 }}>Asset Health Monitor</h3>
+                            </div>
+                            <div style={{ padding: '1rem', overflowY: 'auto', flex: 1 }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '1px solid var(--glass-border)', textAlign: 'left', color: 'var(--text-tertiary)' }}>
+                                            <th style={{ padding: '0.5rem' }}>Asset ID</th>
+                                            <th style={{ padding: '0.5rem' }}>Type</th>
+                                            <th style={{ padding: '0.5rem' }}>Status</th>
+                                            <th style={{ padding: '0.5rem' }}>Health</th>
+                                            <th style={{ padding: '0.5rem' }}>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {/* Mock filtering for "Engineer" relevant assets */}
+                                        {[
+                                            { id: 'T-03', type: 'Truck', status: 'maintenance', health: 45 },
+                                            { id: 'M2', type: 'Compactor', status: 'repair', health: 30 },
+                                            { id: 'M5', type: 'Hydraulic Press', status: 'repair', health: 30 },
+                                            { id: 'B-07', type: 'Bin', status: 'maintenance', health: 40 }
+                                        ].map(asset => (
+                                            <tr key={asset.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600 }}>{asset.id}</td>
+                                                <td style={{ padding: '0.75rem 0.5rem' }}>{asset.type}</td>
+                                                <td style={{ padding: '0.75rem 0.5rem' }}>
+                                                    <span style={{
+                                                        padding: '0.25rem 0.5rem',
+                                                        borderRadius: '4px',
+                                                        background: 'rgba(239, 68, 68, 0.1)',
+                                                        color: 'var(--status-danger)',
+                                                        fontSize: '0.75rem',
+                                                        textTransform: 'uppercase'
+                                                    }}>{asset.status}</span>
+                                                </td>
+                                                <td style={{ padding: '0.75rem 0.5rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <div style={{ width: '60px', height: '6px', background: 'var(--bg-main)', borderRadius: '3px' }}>
+                                                            <div style={{ width: `${asset.health}%`, height: '100%', background: 'var(--status-danger)', borderRadius: '3px' }} />
+                                                        </div>
+                                                        <span>{asset.health}%</span>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '0.75rem 0.5rem' }}>
+                                                    <button style={{
+                                                        padding: '0.25rem 0.75rem',
+                                                        background: 'var(--text-primary)',
+                                                        color: 'var(--bg-main)',
+                                                        border: 'none',
+                                                        borderRadius: '4px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600
+                                                    }}>Inspect</button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Side Panel (Incidents / Activity / Requests) */}
-                <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-                    <h3 style={{ marginBottom: '1.5rem' }}>
-                        {user.role === 'admin' ? 'Pending Requests' :
-                            user.role === 'manager' ? 'My Requests & Alerts' :
-                                user.role === 'engineer' ? 'Maintenance Alerts' : 'Recent Incidents'}
-                    </h3>
+                {/* Right Column: Role Specific Panels */}
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', maxHeight: '600px', overflow: 'hidden' }}>
+                    <div style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--glass-border)', marginBottom: '1rem' }}>
+                        <h3 style={{ margin: 0 }}>
+                            {user.role === 'admin' ? 'System Alerts & Requests' :
+                                user.role === 'manager' ? 'Route Status' :
+                                    user.role === 'engineer' ? 'Work Orders' : 'Notifications'}
+                        </h3>
+                    </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto' }}>
-                        {user.role === 'admin' ? (
-                            displayRequests.length > 0 ? (
-                                displayRequests.map(req => (
-                                    <div key={req.id} style={{
-                                        padding: '1rem',
-                                        background: 'rgba(56, 189, 248, 0.05)',
-                                        borderRadius: '8px',
-                                        borderLeft: `4px solid var(--accent-admin)`
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-admin)' }}>{req.type.toUpperCase()} REQUEST</span>
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{req.date}</span>
-                                        </div>
-                                        <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>{req.notes}</p>
-                                        {req.details && <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}><b>{req.details}</b></p>}
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>From: {req.requester}</span>
-                                            <button
-                                                onClick={() => approveRequest(req.id)}
-                                                style={{
-                                                    padding: '0.25rem 0.75rem',
-                                                    borderRadius: '4px',
-                                                    border: 'none',
-                                                    background: 'var(--status-good)',
-                                                    color: 'black',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 600,
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                Approve
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: '2rem' }}>No pending requests</div>
-                            )
-                        ) : user.role === 'manager' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', paddingRight: '0.5rem' }}>
+
+                        {/* ADMIN VIEW */}
+                        {user.role === 'admin' && (
                             <>
-                                {/* Manager Section: My Pending Requests */}
-                                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Recent Requests</h4>
-                                {displayRequests.length > 0 ? (
-                                    displayRequests.slice(0, 3).map(req => (
-                                        <div key={req.id} style={{
-                                            padding: '0.75rem',
-                                            background: 'rgba(255,255,255,0.03)',
-                                            borderRadius: '8px',
-                                            border: '1px solid var(--glass-border)'
-                                        }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                                                <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{req.type} Request</span>
-                                                <span style={{
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 600,
-                                                    color: req.status === 'approved' ? 'var(--status-good)' : req.status === 'rejected' ? 'var(--status-danger)' : 'var(--status-warning)'
-                                                }}>
-                                                    {req.status?.toUpperCase()}
-                                                </span>
-                                            </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{req.notes}</div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div style={{ fontStyle: 'italic', fontSize: '0.875rem', color: 'var(--text-tertiary)', marginBottom: '1rem' }}>No requests tracked.</div>
-                                )}
-
-                                {/* Manager Section: Regional Incidents */}
-                                <h4 style={{ margin: '1rem 0 0.5rem 0', fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Regional Alerts</h4>
-                                {RECENT_INCIDENTS.slice(0, 3).map((inc) => (
+                                {/* Critical Alerts First */}
+                                {RECENT_INCIDENTS.filter(i => i.severity === 'high' && !i.resolved).map(inc => (
                                     <div key={inc.id} style={{
                                         padding: '0.75rem',
                                         background: 'rgba(239, 68, 68, 0.05)',
@@ -163,48 +175,101 @@ const Overview = () => {
                                         borderLeft: '4px solid var(--status-danger)'
                                     }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                                            <span style={{ fontWeight: 600, color: 'var(--status-danger)' }}>{inc.type.replace('_', ' ').toUpperCase()}</span>
+                                            <span style={{ fontWeight: 700, color: 'var(--status-danger)' }}>CRITICAL ALERT</span>
                                             <span style={{ color: 'var(--text-tertiary)' }}>{inc.timestamp}</span>
                                         </div>
-                                        <div style={{ fontSize: '0.875rem' }}>{inc.message}</div>
+                                        <p style={{ margin: 0, fontSize: '0.85rem' }}>{inc.message}</p>
+                                    </div>
+                                ))}
+
+                                {/* Pending Requests */}
+                                {displayRequests.length > 0 ? (
+                                    displayRequests.map(req => (
+                                        <div key={req.id} style={{
+                                            padding: '0.75rem',
+                                            background: 'rgba(56, 189, 248, 0.05)',
+                                            borderRadius: '8px',
+                                            borderLeft: `4px solid var(--accent-admin)`
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                                <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Requests Approval</span>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{req.date}</span>
+                                            </div>
+                                            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem' }}>{req.notes}</p>
+                                            <button
+                                                onClick={() => approveRequest(req.id)}
+                                                style={{ width: '100%', padding: '0.5rem', background: 'var(--status-good)', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}
+                                            >
+                                                Approve Request
+                                            </button>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div style={{ textAlign: 'center', color: 'var(--text-tertiary)', padding: '1rem' }}>No pending requests</div>
+                                )}
+                            </>
+                        )}
+
+                        {/* MANAGER VIEW */}
+                        {user.role === 'manager' && (
+                            <>
+                                {/* Route Performance List */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    {[
+                                        { id: 'T8', name: 'West Valley', status: 'active', progress: 60 },
+                                        { id: 'T3', name: 'South Ind.', status: 'delayed', progress: 45 }, // Maybe shared region
+                                    ].map(route => (
+                                        <div key={route.id} style={{
+                                            padding: '0.75rem',
+                                            background: 'rgba(255,255,255,0.03)',
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--glass-border)'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                                <span style={{ fontWeight: 500 }}>{route.name}</span>
+                                                <span style={{
+                                                    fontSize: '0.75rem',
+                                                    padding: '0.125rem 0.5rem',
+                                                    borderRadius: '10px',
+                                                    background: route.status === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(234, 179, 8, 0.2)',
+                                                    color: route.status === 'active' ? 'var(--status-good)' : 'var(--status-warning)'
+                                                }}>
+                                                    {route.status.toUpperCase()}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                                                <div style={{ flex: 1, height: '6px', background: 'var(--bg-main)', borderRadius: '3px' }}>
+                                                    <div style={{ width: `${route.progress}%`, height: '100%', background: 'var(--accent-manager)', borderRadius: '3px' }} />
+                                                </div>
+                                                <span>{route.progress}%</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <h4 style={{ margin: '1rem 0 0.5rem 0', fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>Collection Alerts</h4>
+                                {RECENT_INCIDENTS.slice(0, 2).map(inc => (
+                                    <div key={inc.id} style={{ fontSize: '0.8rem', padding: '0.5rem', borderLeft: '3px solid var(--status-warning)', background: 'rgba(255,255,255,0.02)' }}>
+                                        {inc.message}
                                     </div>
                                 ))}
                             </>
-                        ) : (
-                            RECENT_INCIDENTS.map((inc) => (
-                                <div key={inc.id} style={{
-                                    padding: '1rem',
-                                    background: 'rgba(255,255,255,0.03)',
-                                    borderRadius: '8px',
-                                    borderLeft: `4px solid ${inc.severity === 'high' ? 'var(--status-danger)' : inc.severity === 'medium' ? 'var(--status-warning)' : 'var(--status-good)'}`
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                        <span style={{
-                                            fontSize: '0.75rem',
-                                            padding: '0.125rem 0.5rem',
-                                            borderRadius: '4px',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            color: 'var(--text-tertiary)'
-                                        }}>
-                                            {inc.type.replace('_', ' ').toUpperCase()}
-                                        </span>
-                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{inc.timestamp}</span>
-                                    </div>
-                                    <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>{inc.message}</p>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem' }}>
-                                        {inc.resolved ? (
-                                            <span style={{ color: 'var(--status-good)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                <CheckCircle size={14} /> Resolved
-                                            </span>
-                                        ) : (
-                                            <span style={{ color: 'var(--status-danger)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                <AlertTriangle size={14} /> Action Required
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            ))
                         )}
+
+                        {/* ENGINEER VIEW */}
+                        {user.role === 'engineer' && (
+                            <>
+                                <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', borderLeft: '4px solid var(--accent-engineer)' }}>
+                                    <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Repair Bin B-07</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Sensor failure reported. Priority: High</div>
+                                </div>
+                                <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', borderLeft: '4px solid var(--accent-engineer)' }}>
+                                    <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Truck T-03 Service</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Scheduled maintenance due. Mileage limit reached.</div>
+                                </div>
+                            </>
+                        )}
+
                     </div>
                 </div>
             </div>

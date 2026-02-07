@@ -1,14 +1,14 @@
 import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard, Map, Truck, Factory, AlertTriangle,
-    Camera, Users, Trash2, Wrench, X
+    Camera, Users, Trash2, Wrench, X, PieChart, LogOut
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 import logo from '../assets/logo.png';
 
 const Sidebar = ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) => {
-    const { user, openRoleSelector } = useAuth();
+    const { user, logout } = useAuth();
 
 
     // const handleLogout = () => {
@@ -26,6 +26,7 @@ const Sidebar = ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                     { icon: Map, label: 'Routes', path: '/routes' },
                     { icon: Truck, label: 'Assets', path: '/assets' },
                     { icon: Factory, label: 'Facilities', path: '/facilities' },
+                    { icon: PieChart, label: 'Finance', path: '/finance' },
                     { icon: AlertTriangle, label: 'Incidents', path: '/incidents' },
                     { icon: Camera, label: 'CCTV', path: '/cctv' },
                     { icon: Users, label: 'Admin', path: '/admin-users' },
@@ -36,6 +37,7 @@ const Sidebar = ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                     { icon: Map, label: 'Routes', path: '/routes' },
                     { icon: Truck, label: 'Assets', path: '/assets' },
                     { icon: Factory, label: 'Facilities', path: '/facilities' },
+                    { icon: PieChart, label: 'Finance', path: '/finance' },
                 ];
             case 'engineer':
                 return [
@@ -47,6 +49,7 @@ const Sidebar = ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
             case 'finance':
                 return [
                     { icon: LayoutDashboard, label: 'Overview', path: '/' },
+                    { icon: PieChart, label: 'Finance', path: '/finance' },
                     { icon: Map, label: 'Routes', path: '/routes' },
                     { icon: Truck, label: 'Assets', path: '/assets' },
                     { icon: Factory, label: 'Facilities', path: '/facilities' },
@@ -122,24 +125,25 @@ const Sidebar = ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
 
             <div style={{ padding: '1rem', borderTop: '1px solid var(--glass-border)', marginBottom: '1rem' }}>
                 <button
-                    onClick={openRoleSelector}
+                    onClick={logout}
                     style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.75rem',
                         width: '100%',
                         padding: '0.875rem 1rem',
-                        background: 'rgba(56, 189, 248, 0.1)',
+                        background: 'rgba(239, 68, 68, 0.1)', // Red tint for logout
                         border: 'none',
                         borderRadius: 'var(--radius-sm)',
-                        color: 'var(--text-primary)',
+                        color: 'var(--status-danger)',
                         cursor: 'pointer',
                         fontWeight: 500,
-                        transition: 'background 0.2s'
+                        transition: 'background 0.2s',
+                        justifyContent: 'flex-start'
                     }}
                 >
-                    <Users size={20} />
-                    <span>Switch Role</span>
+                    <LogOut size={20} />
+                    <span>Logout</span>
                 </button>
             </div>
 

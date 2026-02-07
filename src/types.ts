@@ -56,8 +56,11 @@ export interface Facility {
   wasteCategory: string[];
   output: number;
   revenue: number;
+  operatingCost: number;
   description?: string;
   lastServiceDate?: string;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Truck {
@@ -76,6 +79,7 @@ export interface Truck {
   totalHours?: number;
   routeId?: string; // Link to Route ID
   route?: string; // Display Name
+  currentLoad?: number; // % Full
 }
 
 export interface Bin {
