@@ -31,12 +31,7 @@ const facilityIcon = new Icon({
     shadowSize: [41, 41]
 });
 
-const truckIcon = new Icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/2554/2554936.png',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -16],
-});
+
 
 // Since external icons might break, let's use a standard colored marker for trucks for reliability if the above fails in preview
 const truckMarkerIcon = new Icon({
