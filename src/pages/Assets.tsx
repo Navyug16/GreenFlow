@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Truck as TruckIcon, Trash2, Battery, AlertTriangle, CheckCircle2, Search, Gauge, Plus, X, MapPin, User, Calendar, CreditCard, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { Truck, Bin } from '../types';
+import type { Truck, Bin } from '../types';
 
 const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 'trucks' | 'bins', hideTabs?: boolean }) => {
     const { user } = useAuth();
@@ -824,7 +824,7 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                         }}>
                             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                 <div style={{ padding: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '12px', color: 'var(--accent-admin)' }}>
-                                    <Truck size={32} />
+                                    <TruckIcon size={32} />
                                 </div>
                                 <div>
                                     <h2 style={{ margin: 0, fontSize: '1.5rem' }}>{selectedTruck.code}</h2>
