@@ -1,8 +1,27 @@
-import { useState } from 'react';
-import { Truck as TruckIcon, Trash2, Battery, AlertTriangle, CheckCircle2, Search, Gauge, Plus, X, MapPin, User, Calendar, CreditCard, ChevronRight } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { Truck as TruckIcon, Trash2, Battery, AlertTriangle, CheckCircle2, Search, Gauge, Plus, X, MapPin, CreditCard, ChevronRight, User, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import type { Truck, Bin } from '../types';
+
+interface StatsCardProps {
+    label: string;
+    value: number | string;
+    icon: React.ElementType;
+    color: string;
+}
+
+const StatsCard = ({ label, value, icon: Icon, color }: StatsCardProps) => (
+    <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ padding: '0.75rem', borderRadius: '12px', background: `${color}20`, color: color }}>
+            <Icon size={24} />
+        </div>
+        <div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>{label}</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{value}</div>
+        </div>
+    </div>
+);
 
 const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 'trucks' | 'bins', hideTabs?: boolean }) => {
     const { user } = useAuth();
@@ -33,17 +52,17 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
     const [selectedTruck, setSelectedTruck] = useState<Truck | null>(null);
     const [selectedBin, setSelectedBin] = useState<Bin | null>(null);
 
-    const filteredTrucks = trucks.filter(t =>
+    const filteredTrucks = useMemo(() => trucks.filter(t =>
         (filterStatus === 'all' || t.status === filterStatus) &&
         (t.code.toLowerCase().includes(searchTerm.toLowerCase()) || t.type.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    ), [trucks, filterStatus, searchTerm]);
 
-    const filteredBins = bins.filter(b =>
+    const filteredBins = useMemo(() => bins.filter(b =>
         (filterStatus === 'all' || b.status === filterStatus) &&
         (b.id.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    ), [bins, filterStatus, searchTerm]);
 
-    const handleRequestSubmit = (e: React.FormEvent) => {
+    const handleRequestSubmit = useCallback((e: React.FormEvent) => {
         e.preventDefault();
         const details = requestType === 'Bin' ? `Location: ${requestLocation}, Cost: ${requestCost}` : requestType === 'Truck' ? `Capacity: ${requestCapacity}, Route: ${requestRoute}` : '';
 
@@ -68,9 +87,9 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
         setRequestCapacity('');
         setRequestRoute('');
         setRequestCost('');
-    };
+    }, [addRequest, requestType, requestNotes, requestLocation, requestCost, requestCapacity, requestRoute, user?.name]);
 
-    const handleAddAssetSubmit = (e: React.FormEvent) => {
+    const handleAddAssetSubmit = useCallback((e: React.FormEvent) => {
         e.preventDefault();
         if (newAssetType === 'Truck') {
             addTruck({
@@ -104,26 +123,7 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
         setNewAssetRoute('');
         setNewAssetLocation('');
         setNewAssetCost('');
-    };
-
-    interface StatsCardProps {
-        label: string;
-        value: number | string;
-        icon: React.ElementType;
-        color: string;
-    }
-
-    const StatsCard = ({ label, value, icon: Icon, color }: StatsCardProps) => (
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ padding: '0.75rem', borderRadius: '12px', background: `${color}20`, color: color }}>
-                <Icon size={24} />
-            </div>
-            <div>
-                <div style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>{label}</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{value}</div>
-            </div>
-        </div>
-    );
+    }, [addTruck, addBin, newAssetType, newAssetCode, newAssetRoute, newAssetLocation, newAssetCost]);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -248,7 +248,7 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                         </div>
                         <select
                             value={filterStatus}
-                            onChange={(e: any) => setFilterStatus(e.target.value)}
+                            onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'maintenance')}
                             style={{
                                 background: 'var(--bg-main)',
                                 border: '1px solid var(--glass-border)',
@@ -798,7 +798,7 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                 </div>
             )}
 
-            {/* Truck Details Modal */}
+            {/* Asset Details Modal */}
             {selectedTruck && (
                 <div style={{
                     position: 'fixed',
@@ -806,110 +806,50 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    background: 'rgba(0,0,0,0.8)',
+                    background: 'rgba(0,0,0,0.7)',
                     backdropFilter: 'blur(5px)',
-                    zIndex: 1100,
+                    zIndex: 1000,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                 }}>
-                    <div className="card" style={{ width: '500px', padding: '0', overflow: 'hidden', animation: 'scaleUp 0.3s ease' }}>
-                        <div style={{
-                            background: 'linear-gradient(to right, var(--bg-panel), var(--bg-main))',
-                            padding: '1.5rem',
-                            borderBottom: '1px solid var(--glass-border)',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'start'
-                        }}>
-                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                <div style={{ padding: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '12px', color: 'var(--accent-admin)' }}>
-                                    <TruckIcon size={32} />
-                                </div>
-                                <div>
-                                    <h2 style={{ margin: 0, fontSize: '1.5rem' }}>{selectedTruck.code}</h2>
-                                    <p style={{ margin: 0, color: 'var(--text-tertiary)' }}>{selectedTruck.type}</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setSelectedTruck(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={24} /></button>
+                    <div className="card" style={{ width: '400px', padding: '2rem', animation: 'slideIn 0.3s ease' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 style={{ margin: 0 }}>Truck Details</h2>
+                            <button onClick={() => setSelectedTruck(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
                         </div>
-
-                        <div style={{ padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                            <div>
-                                <h4 style={{ color: 'var(--text-tertiary)', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Operational Status</h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Current Status</div>
-                                        <div style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            padding: '0.25rem 0.75rem',
-                                            borderRadius: '50px',
-                                            fontSize: '0.875rem',
-                                            fontWeight: 600,
-                                            background: selectedTruck.status === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                            color: selectedTruck.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)'
-                                        }}>
-                                            {selectedTruck.status === 'active' ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
-                                            {selectedTruck.status.toUpperCase()}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Assigned Driver</div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
-                                            <User size={16} color="var(--accent-admin)" /> {selectedTruck.driver || 'N/A'}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>License Plate</div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, fontFamily: 'monospace' }}>
-                                            <CreditCard size={16} color="var(--text-tertiary)" /> {selectedTruck.plate || 'N/A'}
-                                        </div>
-                                    </div>
-                                </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>ID:</span>
+                                <span>{selectedTruck.code}</span>
                             </div>
-
-                            <div>
-                                <h4 style={{ color: 'var(--text-tertiary)', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Technical Specs</h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Total Distance</div>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{selectedTruck.mileage?.toLocaleString()} km</div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Fuel Level</div>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: selectedTruck.fuel > 20 ? 'var(--status-good)' : 'var(--status-danger)' }}>{selectedTruck.fuel}%</div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Load Capacity</div>
-                                        <div style={{ fontSize: '1.125rem', fontWeight: 600 }}>{selectedTruck.capacity || 'N/A'}</div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Last Service</div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}>
-                                            <Calendar size={16} color="var(--text-tertiary)" /> {selectedTruck.lastService}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Route</div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500, color: 'var(--accent-admin)' }}>
-                                            <MapPin size={16} /> {selectedTruck.route || 'Unassigned'}
-                                        </div>
-                                    </div>
-                                </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Type:</span>
+                                <span>{selectedTruck.type}</span>
                             </div>
-                        </div>
-
-                        <div style={{ padding: '1.5rem', background: 'var(--bg-main)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                            <button style={{ padding: '0.75rem 1.5rem', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--accent-admin)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>View Maintenance Log</button>
-                            <button onClick={() => setSelectedTruck(null)} style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-admin)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>Close</button>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Status:</span>
+                                <span style={{ color: selectedTruck.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)' }}>
+                                    {selectedTruck.status.toUpperCase()}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Route:</span>
+                                <span>{selectedTruck.route || 'N/A'}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Fuel:</span>
+                                <span>{selectedTruck.fuel}%</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Mileage:</span>
+                                <span>{selectedTruck.mileage} km</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Bin Details Modal */}
             {selectedBin && (
                 <div style={{
                     position: 'fixed',
@@ -917,101 +857,46 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    background: 'rgba(0,0,0,0.8)',
+                    background: 'rgba(0,0,0,0.7)',
                     backdropFilter: 'blur(5px)',
-                    zIndex: 1100,
+                    zIndex: 1000,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                 }}>
-                    <div className="card" style={{ width: '500px', padding: '0', overflow: 'hidden', animation: 'scaleUp 0.3s ease' }}>
-                        <div style={{
-                            background: 'linear-gradient(to right, var(--bg-panel), var(--bg-main))',
-                            padding: '1.5rem',
-                            borderBottom: '1px solid var(--glass-border)',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'start'
-                        }}>
-                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                <div style={{ padding: '0.75rem', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '12px', color: 'var(--accent-manager)' }}>
-                                    <Trash2 size={32} />
-                                </div>
-                                <div>
-                                    <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Bin #{selectedBin.id}</h2>
-                                    <p style={{ margin: 0, color: 'var(--text-tertiary)' }}>IoT Enabled Smart Bin</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setSelectedBin(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}><X size={24} /></button>
+                    <div className="card" style={{ width: '400px', padding: '2rem', animation: 'slideIn 0.3s ease' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 style={{ margin: 0 }}>Bin Details</h2>
+                            <button onClick={() => setSelectedBin(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
                         </div>
-
-                        <div style={{ padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                            <div>
-                                <h4 style={{ color: 'var(--text-tertiary)', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Status & Location</h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Current Status</div>
-                                        <div style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            padding: '0.25rem 0.75rem',
-                                            borderRadius: '50px',
-                                            fontSize: '0.875rem',
-                                            fontWeight: 600,
-                                            background: selectedBin.status === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                            color: selectedBin.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)'
-                                        }}>
-                                            {selectedBin.status === 'active' ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
-                                            {selectedBin.status.toUpperCase()}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Fill Level</div>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: selectedBin.fillLevel > 80 ? 'var(--status-danger)' : 'var(--text-primary)' }}>
-                                            {selectedBin.fillLevel}%
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Location</div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
-                                            <MapPin size={16} color="var(--accent-manager)" /> {selectedBin.location || 'Unknown'}
-                                        </div>
-                                    </div>
-                                </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>ID:</span>
+                                <span>{selectedBin.id}</span>
                             </div>
-
-                            <div>
-                                <h4 style={{ color: 'var(--text-tertiary)', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Operational Details</h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Purchase Cost</div>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent-finance)' }}>
-                                            {selectedBin.cost ? selectedBin.cost.toLocaleString() : '0'} SAR
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Last Collection</div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}>
-                                            <Calendar size={16} color="var(--text-tertiary)" /> {selectedBin.lastCollection}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Coordinates</div>
-                                        <div style={{ fontSize: '0.875rem', fontFamily: 'monospace', color: 'var(--text-tertiary)' }}>
-                                            {selectedBin.lat.toFixed(4)}, {selectedBin.lng.toFixed(4)}
-                                        </div>
-                                    </div>
-                                </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Location:</span>
+                                <span>{selectedBin.location || 'N/A'}</span>
                             </div>
-                        </div>
-
-                        <div style={{ padding: '1.5rem', background: 'var(--bg-main)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                            <button onClick={() => setSelectedBin(null)} style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-manager)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600 }}>Close</button>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Status:</span>
+                                <span style={{ color: selectedBin.status === 'active' ? 'var(--status-good)' : 'var(--status-danger)' }}>
+                                    {selectedBin.status.toUpperCase()}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Fill Level:</span>
+                                <span>{selectedBin.fillLevel}%</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Last Collection:</span>
+                                <span>{selectedBin.lastCollection}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
+
         </div>
     );
 };
