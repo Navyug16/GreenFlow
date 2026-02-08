@@ -1,16 +1,50 @@
-import { Factory, Zap, Trash2, Activity, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Factory, Zap, Trash2, Activity, AlertTriangle, X, Thermometer, Gauge, BarChart3, Wind, Droplets } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import MapWidget from '../components/MapWidget';
+import type { Facility } from '../types';
 
 const FacilitiesPage = () => {
     const { user } = useAuth();
+    const { facilities = [] } = useData();
+    const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
+
+    // Simulated Metrics State for the Modal
+    const [metrics, setMetrics] = useState({
+        temp: 0,
+        pressure: 0,
+        voltage: 0,
+        rpm: 0
+    });
+
+    // Animate metrics when a facility is selected
+    useEffect(() => {
+        if (!selectedFacility) return;
+
+        // Initial random values
+        setMetrics({
+            temp: 450 + Math.random() * 50,
+            pressure: 80 + Math.random() * 10,
+            voltage: 11 + Math.random(),
+            rpm: 3200 + Math.random() * 200
+        });
+
+        const interval = setInterval(() => {
+            setMetrics(prev => ({
+                temp: prev.temp + (Math.random() - 0.5) * 5,
+                pressure: prev.pressure + (Math.random() - 0.5) * 2,
+                voltage: prev.voltage + (Math.random() - 0.5) * 0.1,
+                rpm: prev.rpm + (Math.random() - 0.5) * 50
+            }));
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, [selectedFacility]);
 
     if (user?.role === 'engineer') {
         return <div style={{ padding: '2rem', color: 'white' }}>Access Restricted: Engineers view specific machinery via the dedicated module.</div>;
     }
-
-    const { facilities = [] } = useData();
 
     const getIcon = (type: string) => {
         switch (type) {
@@ -39,9 +73,129 @@ const FacilitiesPage = () => {
         }
     };
 
+    // Modal Component
+    const FacilityModal = ({ facility, onClose }: { facility: Facility, onClose: () => void }) => {
+        const Icon = getIcon(facility.type);
+        const color = getColor(facility.type);
 
+        return (
+            <div style={{
+                position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+                display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999
+            }}>
+                <div style={{
+                    background: '#1e293b', width: '90%', maxWidth: '800px', borderRadius: '24px',
+                    border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+                }}>
+                    {/* Header */}
+                    <div style={{ padding: '2rem', background: `linear-gradient(to right, ${color}20, transparent)`, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                            <div style={{ padding: '1rem', background: color, borderRadius: '16px', color: '#0f172a', boxShadow: `0 0 20px ${color}60` }}>
+                                <Icon size={32} />
+                            </div>
+                            <div>
+                                <h2 style={{ fontSize: '1.75rem', fontWeight: 700, margin: 0, color: 'white' }}>{facility.name}</h2>
+                                <p style={{ margin: '0.25rem 0 0', opacity: 0.6, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    {facility.region} • <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{facility.type}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '0.75rem', borderRadius: '50%', cursor: 'pointer', transition: 'background 0.2s' }}>
+                            <X size={24} />
+                        </button>
+                    </div>
 
-    // ... (existing imports/code)
+                    {/* Content */}
+                    <div style={{ padding: '2rem', color: 'white' }}>
+
+                        {/* Status Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+                            {/* Specific Metrics Based on Type */}
+                            {facility.type === 'energy' && (
+                                <>
+                                    <MetricCard label="Turbine Speed" value={Math.round(metrics.rpm)} unit="RPM" icon={Wind} color="#38bdf8" />
+                                    <MetricCard label="Core Temp" value={Math.round(metrics.temp)} unit="°C" icon={Thermometer} color="#f43f5e" />
+                                    <MetricCard label="Grid Voltage" value={metrics.voltage.toFixed(2)} unit="kV" icon={Zap} color="#fbbf24" />
+                                    <MetricCard label="System Pressure" value={Math.round(metrics.pressure)} unit="Bar" icon={Gauge} color="#a78bfa" />
+                                </>
+                            )}
+                            {facility.type === 'recycle' && (
+                                <>
+                                    <MetricCard label="Line Speed" value={(metrics.rpm / 1000).toFixed(1)} unit="m/s" icon={Activity} color="#38bdf8" />
+                                    <MetricCard label="Contamination" value={(metrics.pressure / 10).toFixed(1)} unit="%" icon={AlertTriangle} color="#f43f5e" />
+                                    <MetricCard label="Purity Level" value={(90 + metrics.voltage).toFixed(1)} unit="%" icon={Zap} color="#34d399" />
+                                    <MetricCard label="Bales/Hr" value={Math.round(metrics.rpm / 50)} unit="Units" icon={Factory} color="#a78bfa" />
+                                </>
+                            )}
+                            {facility.type === 'dumpyard' && (
+                                <>
+                                    <MetricCard label="Methane Level" value={(metrics.pressure * 2).toFixed(0)} unit="ppm" icon={Wind} color="#34d399" />
+                                    <MetricCard label="Soil Moisture" value={(metrics.voltage * 4).toFixed(1)} unit="%" icon={Droplets} color="#38bdf8" />
+                                    <MetricCard label="Compression" value={(metrics.rpm / 500).toFixed(1)} unit="x" icon={BarChart3} color="#fbbf24" />
+                                    <MetricCard label="Capacity" value={Math.round((facility.currentLoad / facility.capacity) * 100)} unit="%" icon={Gauge} color="#f43f5e" />
+                                </>
+                            )}
+                        </div>
+
+                        {/* Main Info */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem' }}>Operational Overview</h3>
+                                <p style={{ lineHeight: '1.6', opacity: 0.8, fontSize: '0.95rem' }}>{facility.description} Currently operating at optimized levels with automated systems monitoring operational integrity.</p>
+
+                                <div style={{ marginTop: '1.5rem', display: 'flex', gap: '2rem' }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '0.25rem' }}>Daily Output</div>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 600 }}>{facility.output?.toLocaleString()} <span style={{ fontSize: '0.9rem', fontWeight: 400, opacity: 0.7 }}>{getUnit(facility.type)}</span></div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '0.25rem' }}>Incoming Load</div>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 600 }}>{facility.incomingWaste?.toLocaleString()} <span style={{ fontSize: '0.9rem', fontWeight: 400, opacity: 0.7 }}>Tons</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem' }}>Efficiency</h3>
+                                <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {/* Simple Pure CSS Gauge */}
+                                    <div style={{
+                                        width: '180px', height: '180px', borderRadius: '50%',
+                                        background: `conic-gradient(${color} 0% 75%, rgba(255,255,255,0.1) 75% 100%)`,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        boxShadow: `0 0 30px ${color}30`
+                                    }}>
+                                        <div style={{ width: '150px', height: '150px', background: '#1e293b', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                            <div style={{ fontSize: '2.5rem', fontWeight: 700, color: color }}>94%</div>
+                                            <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>OEE Score</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    {/* Footer Actions */}
+                    <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                        <button onClick={onClose} style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', cursor: 'pointer' }}>Close</button>
+                        <button style={{ padding: '0.75rem 1.5rem', background: color, color: '#0f172a', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', boxShadow: `0 4px 12px ${color}40` }}>Download Report</button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const MetricCard = ({ label, value, unit, icon: Icon, color }: any) => (
+        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: color, fontSize: '0.85rem', fontWeight: 500 }}>
+                <Icon size={16} /> {label}
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+                {value} <span style={{ fontSize: '0.85rem', opacity: 0.5, fontWeight: 400 }}>{unit}</span>
+            </div>
+        </div>
+    );
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -203,20 +357,22 @@ const FacilitiesPage = () => {
 
                             {/* Controls */}
                             <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                <button style={{
-                                    flex: 1,
-                                    padding: '0.75rem',
-                                    background: 'var(--text-primary)',
-                                    color: 'var(--bg-main)',
-                                    border: 'none',
-                                    borderRadius: 'var(--radius-sm)',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '0.5rem'
-                                }}>
+                                <button
+                                    onClick={() => setSelectedFacility(facility)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '0.75rem',
+                                        background: 'var(--text-primary)',
+                                        color: 'var(--bg-main)',
+                                        border: 'none',
+                                        borderRadius: 'var(--radius-sm)',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem'
+                                    }}>
                                     <Activity size={16} /> View Details
                                 </button>
                                 {user?.role === 'admin' && (
@@ -236,6 +392,11 @@ const FacilitiesPage = () => {
                     );
                 })}
             </div>
+
+            {/* Render Modal */}
+            {selectedFacility && (
+                <FacilityModal facility={selectedFacility} onClose={() => setSelectedFacility(null)} />
+            )}
         </div>
     );
 };

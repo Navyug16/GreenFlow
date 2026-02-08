@@ -156,39 +156,35 @@ export const FACILITIES: Facility[] = [
     }
 ];
 
-// Updated Bins clustered around new Riyadh facilities
+// Aligned Bins with Trucks.csv Locations
 export const BINS: Bin[] = [
-    // Near F1 (North Dump Yard - 24.8341, 46.6370)
-    { id: 'B-01', lat: 24.8350, lng: 46.6380, fillLevel: 45, status: 'active', health: 100, region: 'North Riyadh', overflowStatus: false, lastCollection: '2 hours ago', location: 'North District Market', cost: 6800, routeId: 'T1' },
-    { id: 'B-02', lat: 24.8360, lng: 46.6360, fillLevel: 72, status: 'active', health: 95, region: 'North Riyadh', overflowStatus: false, lastCollection: '4 hours ago', location: 'Qirawan Residential', cost: 6200, routeId: 'T1' },
-    { id: 'B-03', lat: 24.8330, lng: 46.6390, fillLevel: 88, status: 'active', health: 90, region: 'North Riyadh', overflowStatus: false, lastCollection: '1 day ago', location: 'North Commercial Strip', cost: 7000, routeId: 'T1' },
+    // T-01: Al Faisaliah / Olaya / Kingdom Centre
+    { id: 'B-01', lat: 24.6905, lng: 46.6855, fillLevel: 45, status: 'active', health: 100, region: 'Central Riyadh', overflowStatus: false, lastCollection: '2 hours ago', location: 'Al Faisaliah Tower', cost: 1200, routeId: 'T1' },
+    { id: 'B-19', lat: 24.7000, lng: 46.6800, fillLevel: 50, status: 'active', health: 98, region: 'Central Riyadh', overflowStatus: false, lastCollection: '3 hours ago', location: 'Olaya Street', cost: 1150, routeId: 'T1' },
+    { id: 'B-02', lat: 24.7115, lng: 46.6745, fillLevel: 60, status: 'active', health: 95, region: 'Central Riyadh', overflowStatus: false, lastCollection: '4 hours ago', location: 'Kingdom Centre', cost: 1100, routeId: 'T1' },
 
-    // Near F6 (Central Energy - 24.7117, 46.6740)
-    { id: 'B-04', lat: 24.7120, lng: 46.6750, fillLevel: 25, status: 'active', health: 75, region: 'Central Riyadh', overflowStatus: false, lastCollection: '30 mins ago', location: 'Kingdom Centre Area', cost: 5200, routeId: 'T7' },
-    { id: 'B-05', lat: 24.7100, lng: 46.6730, fillLevel: 60, status: 'active', health: 85, region: 'Central Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'Olaya Street', cost: 4800, routeId: 'T7' },
-    { id: 'B-15', lat: 24.7130, lng: 46.6760, fillLevel: 20, status: 'active', health: 99, region: 'Central Riyadh', overflowStatus: false, lastCollection: '2 hours ago', location: 'Al Faisaliah Proximity', cost: 5900, routeId: 'T7' },
+    // T-02: Al Malaz Park
+    { id: 'B-03', lat: 24.6655, lng: 46.7255, fillLevel: 30, status: 'active', health: 90, region: 'Central Riyadh', overflowStatus: false, lastCollection: '1 day ago', location: 'Al Malaz Park', cost: 900, routeId: 'T2' },
 
-    // Near F2 (South Dump Yard - 24.5247, 46.7224)
-    { id: 'B-07', lat: 24.5250, lng: 46.7230, fillLevel: 92, status: 'maintenance', health: 40, region: 'South Riyadh', overflowStatus: true, lastCollection: '2 days ago', location: 'Aziziyah South', cost: 7500, routeId: 'T3' },
-    { id: 'B-08', lat: 24.5240, lng: 46.7210, fillLevel: 80, status: 'active', health: 92, region: 'South Riyadh', overflowStatus: false, lastCollection: '6 hours ago', location: 'South Ring Road Stop', cost: 6900, routeId: 'T3' },
+    // T-03: Second Industrial City
+    { id: 'B-04', lat: 24.5950, lng: 46.8050, fillLevel: 85, status: 'warning', health: 80, region: 'South Riyadh', overflowStatus: false, lastCollection: '6 hours ago', location: 'Second Industrial Gate', cost: 1500, routeId: 'T3' },
 
-    // Near F4 (Riyadh Industrial - 24.5856, 46.7532)
-    { id: 'B-09', lat: 24.5860, lng: 46.7540, fillLevel: 15, status: 'active', health: 98, region: 'Industrial Area', overflowStatus: false, lastCollection: '10 mins ago', location: 'New Industrial Gate 1', cost: 8200, routeId: 'T2' },
-    { id: 'B-10', lat: 24.5850, lng: 46.7520, fillLevel: 40, status: 'active', health: 88, region: 'Industrial Area', overflowStatus: false, lastCollection: '1 hour ago', location: 'Factory Zone A', cost: 7800, routeId: 'T2' },
+    // T-04: King Khalid Airport
+    { id: 'B-05', lat: 24.9505, lng: 46.7005, fillLevel: 25, status: 'active', health: 98, region: 'North Riyadh', overflowStatus: false, lastCollection: '30 mins ago', location: 'Airport Terminal 5', cost: 2000, routeId: 'T4' },
+    { id: 'B-15', lat: 24.9600, lng: 46.7100, fillLevel: 40, status: 'active', health: 95, region: 'North Riyadh', overflowStatus: false, lastCollection: '1 hour ago', location: 'Airport Cargo Area', cost: 1900, routeId: 'T4' },
 
-    // Near F5 (Outskirts Energy - 24.9062, 46.4189)
-    { id: 'B-11', lat: 24.9070, lng: 46.4190, fillLevel: 65, status: 'active', health: 94, region: 'Riyadh Outskirts', overflowStatus: false, lastCollection: '3 hours ago', location: 'West Outskirts Village', cost: 6700, routeId: 'T4' },
-    { id: 'B-12', lat: 24.9050, lng: 46.4200, fillLevel: 55, status: 'active', health: 96, region: 'Riyadh Outskirts', overflowStatus: false, lastCollection: '4 hours ago', location: 'Diriya Approach', cost: 6300, routeId: 'T4' },
+    // T-05: Riyadh Park Mall
+    { id: 'B-06', lat: 24.7550, lng: 46.6300, fillLevel: 75, status: 'active', health: 88, region: 'North Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'Riyadh Park Mall', cost: 1800, routeId: 'T5' },
+    { id: 'B-11', lat: 24.7600, lng: 46.6350, fillLevel: 60, status: 'active', health: 92, region: 'North Riyadh', overflowStatus: false, lastCollection: '2 hours ago', location: 'Riyadh Park North', cost: 1700, routeId: 'T5' },
+    { id: 'B-12', lat: 24.7500, lng: 46.6250, fillLevel: 50, status: 'active', health: 94, region: 'North Riyadh', overflowStatus: false, lastCollection: '3 hours ago', location: 'Riyadh Park West', cost: 1750, routeId: 'T5' },
 
-    // Near F3 (Sudair Industrial - 25.0186, 47.2956) - A bit far, but keeping logical connection
-    { id: 'B-06', lat: 25.0190, lng: 47.2960, fillLevel: 35, status: 'active', health: 80, region: 'Sudair Industrial', overflowStatus: false, lastCollection: '1 day ago', location: 'Sudair Main Gate', cost: 5500, routeId: 'T6' },
-    { id: 'B-13', lat: 25.0180, lng: 47.2950, fillLevel: 30, status: 'active', health: 89, region: 'Sudair Industrial', overflowStatus: false, lastCollection: '1 day ago', location: 'Logistics Hub', cost: 4600, routeId: 'T6' },
+    // T-06: Al Nahda / Granada
+    { id: 'B-07', lat: 24.7850, lng: 46.7400, fillLevel: 40, status: 'active', health: 92, region: 'East Riyadh', overflowStatus: false, lastCollection: '3 hours ago', location: 'Granada Mall', cost: 1400, routeId: 'T6' },
+    { id: 'B-13', lat: 24.7900, lng: 46.7450, fillLevel: 45, status: 'active', health: 90, region: 'East Riyadh', overflowStatus: false, lastCollection: '4 hours ago', location: 'Granada Business Park', cost: 1450, routeId: 'T6' },
 
-    // General West/Mixed
-    { id: 'B-16', lat: 24.6500, lng: 46.5500, fillLevel: 85, status: 'active', health: 80, region: 'West Riyadh', overflowStatus: false, lastCollection: '6 hours ago', location: 'Wadi Hanifa', cost: 4500, routeId: 'T8' },
-    { id: 'B-17', lat: 24.6600, lng: 46.5600, fillLevel: 65, status: 'active', health: 88, region: 'West Riyadh', overflowStatus: false, lastCollection: '3 hours ago', location: 'Irqah District', cost: 4200, routeId: 'T8' },
-    { id: 'B-18', lat: 24.6400, lng: 46.5400, fillLevel: 95, status: 'active', health: 70, region: 'West Riyadh', overflowStatus: true, lastCollection: '1 day ago', location: 'Laban Exit', cost: 4800, routeId: 'T8' },
-    { id: 'B-14', lat: 24.7500, lng: 46.6500, fillLevel: 75, status: 'active', health: 91, region: 'North Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'KAFD Area', cost: 6400, routeId: 'T5' },
+    // T-07: Ministry of Interior
+    { id: 'B-08', lat: 24.6805, lng: 46.6205, fillLevel: 55, status: 'active', health: 96, region: 'Central Riyadh', overflowStatus: false, lastCollection: '4 hours ago', location: 'Ministry of Interior', cost: 1300, routeId: 'T7' },
+    { id: 'B-14', lat: 24.6850, lng: 46.6250, fillLevel: 65, status: 'active', health: 93, region: 'Central Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'Ministry Housing', cost: 1350, routeId: 'T7' }
 ];
 
 export const MACHINERY: Machine[] = [
@@ -215,15 +211,13 @@ export const TRUCKS: Truck[] = [
     { id: '7', code: 'T-07', plate: 'T-07', driver: 'Farukh Saikh', type: 'Pickup', route: 'Ministry of Interior HQ', routeId: 'T7', status: 'active', health: 96, region: 'Central Riyadh', fuel: 80, mileage: 6700, lastService: '2026-01-22', capacity: '5 Tons', totalHours: 1900 },
 ];
 
-// Simplified Route Data for Demo visualization (connecting some bin points)
-// Full Route Data for all 7 Trucks
 export const TRUCK_ROUTES = [
     {
         id: 'T1',
-        name: 'North Zone Route',
-        region: 'North Zone',
+        name: 'Olaya Corridor',
+        region: 'Central Zone',
         truckId: '1',
-        assignedBinIds: ['B-01', 'B-02', 'B-03'],
+        assignedBinIds: ['B-01', 'B-19', 'B-02'],
         distance: 12.5,
         currentFuelCost: 45.50,
         driver: 'Mohammed Al-Salem',
@@ -231,14 +225,14 @@ export const TRUCK_ROUTES = [
         status: 'in_progress',
         progress: 45,
         efficiency: 94,
-        currentPath: [[23.0900, 72.5700], [23.0920, 72.5720]] as [number, number][]
+        currentPath: [[24.6900, 46.6850], [24.7000, 46.6800], [24.7100, 46.6750]] as [number, number][]
     },
     {
         id: 'T2',
-        name: 'East Industrial Route',
-        region: 'East Zone',
+        name: 'Al Malaz Route',
+        region: 'Central Zone',
         truckId: '2',
-        assignedBinIds: ['B-04', 'B-05', 'B-06'],
+        assignedBinIds: ['B-03'],
         distance: 8.2,
         currentFuelCost: 28.10,
         driver: 'Ajay Kumar',
@@ -246,14 +240,14 @@ export const TRUCK_ROUTES = [
         status: 'active',
         progress: 20,
         efficiency: 89,
-        currentPath: [[23.0250, 72.6350], [23.0270, 72.6370]] as [number, number][]
+        currentPath: [[24.6650, 46.7250], [24.6700, 46.7300]] as [number, number][]
     },
     {
         id: 'T3',
-        name: 'South Zone Route',
+        name: 'Industrial Route',
         region: 'South Zone',
         truckId: '3',
-        assignedBinIds: ['B-07', 'B-08'],
+        assignedBinIds: ['B-04'],
         distance: 24.0,
         currentFuelCost: 85.00,
         driver: 'Faisal Al-Harbi',
@@ -261,14 +255,14 @@ export const TRUCK_ROUTES = [
         status: 'delayed',
         progress: 0,
         efficiency: 10,
-        currentPath: [[22.9780, 72.4900], [22.9800, 72.4920]] as [number, number][]
+        currentPath: [[24.5950, 46.8050], [24.6000, 46.8000]] as [number, number][]
     },
     {
         id: 'T4',
-        name: 'Outer Ring Route',
-        region: 'Ring Road',
+        name: 'Airport Route',
+        region: 'North Zone',
         truckId: '4',
-        assignedBinIds: ['B-09', 'B-10'],
+        assignedBinIds: ['B-05', 'B-15'],
         distance: 35.5,
         currentFuelCost: 120.50,
         driver: 'Ahmed Hassan',
@@ -276,14 +270,14 @@ export const TRUCK_ROUTES = [
         status: 'active',
         progress: 60,
         efficiency: 92,
-        currentPath: [[23.1120, 72.6040], [23.1140, 72.6060]] as [number, number][]
+        currentPath: [[24.9500, 46.7000], [24.9600, 46.7100]] as [number, number][]
     },
     {
         id: 'T5',
-        name: 'West Industrial Route',
-        region: 'West Zone',
+        name: 'Riyadh Park Route',
+        region: 'North Zone',
         truckId: '5',
-        assignedBinIds: ['B-11', 'B-12'],
+        assignedBinIds: ['B-06', 'B-11', 'B-12'],
         distance: 18.2,
         currentFuelCost: 65.20,
         driver: 'Abdul Rehman',
@@ -291,14 +285,14 @@ export const TRUCK_ROUTES = [
         status: 'active',
         progress: 10,
         efficiency: 88,
-        currentPath: [[23.0580, 72.5130], [23.0600, 72.5150]] as [number, number][]
+        currentPath: [[24.7550, 46.6300], [24.7600, 46.6350]] as [number, number][]
     },
     {
         id: 'T6',
-        name: 'Peripheral Route',
-        region: 'Peripheral Zone',
+        name: 'Granada Route',
+        region: 'East Zone',
         truckId: '6',
-        assignedBinIds: ['B-13', 'B-14'],
+        assignedBinIds: ['B-07', 'B-13'],
         distance: 15.8,
         currentFuelCost: 52.80,
         driver: 'Salman Khan',
@@ -306,14 +300,14 @@ export const TRUCK_ROUTES = [
         status: 'active',
         progress: 35,
         efficiency: 85,
-        currentPath: [[22.9450, 72.5890], [22.9470, 72.5910]] as [number, number][]
+        currentPath: [[24.7850, 46.7400], [24.7900, 46.7450]] as [number, number][]
     },
     {
         id: 'T7',
-        name: 'Central City Route',
+        name: 'Ministry Route',
         region: 'Central Zone',
         truckId: '7',
-        assignedBinIds: ['B-15'],
+        assignedBinIds: ['B-08', 'B-14'],
         distance: 5.5,
         currentFuelCost: 18.50,
         driver: 'Farukh Saikh',
@@ -321,21 +315,6 @@ export const TRUCK_ROUTES = [
         status: 'active',
         progress: 80,
         efficiency: 95,
-        currentPath: [[23.0300, 72.5800], [23.0310, 72.5810]] as [number, number][]
-    },
-    {
-        id: 'T8',
-        name: 'West Residential Route',
-        region: 'West Zone',
-        truckId: '8',
-        assignedBinIds: ['B-16', 'B-17', 'B-18'],
-        distance: 14.5,
-        currentFuelCost: 48.00,
-        driver: 'Kareem Abdul',
-        vehicle: 'Compactor T-08',
-        status: 'active',
-        progress: 60,
-        efficiency: 88,
-        currentPath: [[23.0500, 72.5200], [23.0520, 72.5190]] as [number, number][]
+        currentPath: [[24.6800, 46.6200], [24.6850, 46.6250]] as [number, number][]
     }
 ];

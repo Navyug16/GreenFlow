@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import L, { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Fuel, Truck, Navigation, RefreshCw } from 'lucide-react';
-import { TRUCK_ROUTES, FACILITIES, BINS } from '../data/mockData';
+import { Fuel, Truck as TruckIcon, Navigation, RefreshCw, AlertTriangle, Layers } from 'lucide-react';
+import { FACILITIES } from '../data/mockData';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -29,6 +29,28 @@ const truckIcon = new DivIcon({
     popupAnchor: [0, -20]
 });
 
+// Full Truck Icon (Red)
+const fullTruckIcon = new DivIcon({
+    html: `<div style="
+        background-color: #EF4444; 
+        width: 40px; 
+        height: 40px; 
+        border-radius: 50%; 
+        border: 2px solid white; 
+        box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        font-size: 22px;
+        transform: translate(-2px, -2px);">
+        🚛
+    </div>`,
+    className: 'full-truck-icon',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20]
+});
+
 // Helper to auto-zoom to selected route
 const MapRecenter = ({ selectedRoute, routes }: { selectedRoute: string | null, routes: any[] }) => {
     const map = useMap();
@@ -37,12 +59,9 @@ const MapRecenter = ({ selectedRoute, routes }: { selectedRoute: string | null, 
         if (selectedRoute) {
             const route = routes.find(r => r.id === selectedRoute);
             if (route && route.currentPath && route.currentPath.length > 0) {
-                // Calculate bounds
                 const bounds = L.latLngBounds(route.currentPath);
                 map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 15 });
             }
-        } else {
-            map.flyTo([24.72, 46.68], 13);
         }
     }, [selectedRoute, routes, map]);
 
@@ -69,37 +88,112 @@ const getFacilityIcon = (type: string) => new DivIcon({
     iconAnchor: [16, 16]
 });
 
+// Function to calculate distance between two points
+const getDistance = (p1: { lat: number, lng: number }, p2: { lat: number, lng: number }) => {
+    return Math.sqrt(Math.pow(p1.lat - p2.lat, 2) + Math.pow(p1.lng - p2.lng, 2));
+};
+
 const RoutesPage = () => {
-    // Local simulation state for bin levels to show "emptying and filling"
-    const [simulatedBins, setSimulatedBins] = useState(BINS);
-    const [routes, setRoutes] = useState(TRUCK_ROUTES);
+    const { bins, routes: contextRoutes, trucks: contextTrucks } = useData();
+    const [displayRoutes, setDisplayRoutes] = useState<any[]>([]);
+    const [simulatedBins, setSimulatedBins] = useState(bins);
     const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [activeNotification, setActiveNotification] = useState<string | null>(null);
+    const [mapStyle, setMapStyle] = useState<'dark' | 'light'>('dark');
+
+    // Truck Load State: routeId -> load %
+    const [truckLoads, setTruckLoads] = useState<Record<string, number>>({});
+
     const startTimeRef = useRef<number | null>(null);
-    const { updateBin } = useData();
     const { user } = useAuth();
 
-    if (user?.role !== 'admin' && user?.role !== 'manager' && user?.role !== 'finance') {
-        return (
-            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-                <h2>Access Restricted</h2>
-                <p>You do not have permission to view this page.</p>
-            </div>
-        );
-    }
+    // --- DYNAMIC ALGO: ASSIGN BINS TO TRUCKS BASED ON REGION ---
+    // Instead of using hardcoded mock assignments, we recalculate them
+    const dynamicRoutes = contextRoutes.map(route => {
+        // Find truck details for this route
+        const truck = contextTrucks.find(t => t.id === route.truckId);
+        const region = truck?.region || route.region || 'Central Riyadh';
 
-    // Sync Simulation to Global Context (Data Connect) every 2 seconds
+        let assignedBinIds: string[] = [];
+
+        // 1. Get all bins in this region
+        const regionalBins = bins.filter(b => b.region === region && b.status !== 'maintenance');
+
+        // 2. Simple partitioning: Assign bins to trucks in the same region
+        // Get all routes in this region to split bins among them
+        const regionalRoutes = contextRoutes.filter(r => {
+            const t = contextTrucks.find(trk => trk.id === r.truckId);
+            return (t?.region === region) || (r.region === region);
+        });
+
+        // Sort routes by ID to ensure consistent assignment order
+        regionalRoutes.sort((a, b) => a.id.localeCompare(b.id));
+        const routeIndex = regionalRoutes.findIndex(r => r.id === route.id);
+
+        if (regionalBins.length > 0 && regionalRoutes.length > 0 && routeIndex >= 0) {
+            // Distribute bins: Loop through bins and assign round-robin
+            assignedBinIds = regionalBins
+                .filter((_, idx) => idx % regionalRoutes.length === routeIndex)
+                .map(b => b.id);
+        }
+
+        // TSP-ish Sort: Order bins by nearest neighbor starting from a "hub" (Facility)
+        // Heuristic Hub
+        let hub = { lat: 24.75, lng: 46.72 };
+        if (region.includes('South')) hub = { lat: 24.60, lng: 46.80 };
+        if (region.includes('North')) hub = { lat: 24.95, lng: 46.70 };
+
+        if (assignedBinIds.length > 0) {
+            const sortedBins: string[] = [];
+            let currentParams = hub;
+            const pool = assignedBinIds.map(id => bins.find(b => b.id === id)).filter(b => b !== undefined) as any[];
+
+            while (pool.length > 0) {
+                // Find closest to current
+                let closestIdx = -1;
+                let minDst = Infinity;
+                pool.forEach((b, idx) => {
+                    const d = getDistance(currentParams, { lat: b.lat, lng: b.lng });
+                    if (d < minDst) {
+                        minDst = d;
+                        closestIdx = idx;
+                    }
+                });
+
+                if (closestIdx !== -1) {
+                    const nextBin = pool.splice(closestIdx, 1)[0];
+                    sortedBins.push(nextBin.id);
+                    currentParams = { lat: nextBin.lat, lng: nextBin.lng };
+                } else {
+                    break;
+                }
+            }
+            assignedBinIds = sortedBins;
+        }
+
+        return { ...route, assignedBinIds };
+    });
+
+    // Sync simulated Bins with real bins structure whenever meaningful changes happen (add/remove)
     useEffect(() => {
-        const interval = setInterval(() => {
-            simulatedBins.forEach(b => {
-                updateBin(b.id, { fillLevel: b.fillLevel });
-            });
-        }, 2000);
-        return () => clearInterval(interval);
-    }, [simulatedBins, updateBin]);
+        setSimulatedBins(currentSims => {
+            // Add new bins
+            const newBins = bins.filter(b => !currentSims.find(s => s.id === b.id));
+            // Remove deleted bins
+            const keptBins = currentSims.filter(s => bins.find(b => b.id === s.id));
 
-    // Fetch paths logic (kept similar but ensured it runs)
+            // For kept bins, preserve local simulation state (fillLevel) but take other updates
+            return [...keptBins, ...newBins].map(b => {
+                const real = bins.find(r => r.id === b.id);
+                // If real bin exists, use its metadata but keep local fillLevel if it exists in currentSims
+                const existingSim = currentSims.find(s => s.id === b.id);
+                return real ? { ...real, fillLevel: existingSim ? existingSim.fillLevel : real.fillLevel } : b;
+            });
+        });
+    }, [bins]);
+
+    // Routing Logic to calculate Circular Paths
     useEffect(() => {
         const fetchRouteGeometry = async (waypoints: [number, number][]) => {
             try {
@@ -115,131 +209,128 @@ const RoutesPage = () => {
         };
 
         const updateRoutes = async () => {
-            const fetchAndSet = async (id: string, pathPoints: [number, number][]) => {
-                const path = await fetchRouteGeometry(pathPoints);
-                return { id, path };
-            };
+            // Use dynamicRoutes calculated above
+            const calculatedRoutes = await Promise.all(dynamicRoutes.map(async (route) => {
+                // Find bins for this route using latest bins data
+                const routeBins = bins.filter(b => route.assignedBinIds?.includes(b.id));
 
-            // Define Circular Routes: Start -> Bins -> Facility -> Start
-            // F1: [24.75, 46.72], F2: [24.60, 46.80], F3: [24.95, 46.70]
+                // If no bins, return route with empty path
+                if (routeBins.length === 0) return { ...route, currentPath: [] };
 
-            const routeUpdates = await Promise.all([
-                // T1: Olaya -> Bins -> F1 -> Olaya
-                fetchAndSet('T1', [
-                    [24.6850, 46.6900], [24.6905, 46.6855], [24.6960, 46.6810], [24.7115, 46.6745], [24.75, 46.72], [24.6850, 46.6900]
-                ]),
-                // T2: Malaz -> Bins -> F1 -> Malaz
-                fetchAndSet('T2', [
-                    [24.6700, 46.7300], [24.6655, 46.7255], [24.6600, 46.7200], [24.6620, 46.7150], [24.75, 46.72], [24.6700, 46.7300]
-                ]),
-                // T3: Industrial -> Bins -> F2 -> Start
-                fetchAndSet('T3', [
-                    [24.6005, 46.8005], // B7
-                    [24.5950, 46.8050], // B8
-                    [24.5940, 46.8060], // B8 Overshoot
-                    [24.60, 46.80],     // F2
-                    [24.6005, 46.8005]
-                ]),
-                // T4: Airport -> Bins -> F3 -> Start
-                fetchAndSet('T4', [
-                    [24.9505, 46.7005], // B-09
-                    [24.9450, 46.6950], // B-10
-                    [24.9550, 46.7100], // Loop Detour
-                    [24.9505, 46.7005]  // Back
-                ]),
-                // T5: Northern -> Bins -> F1 -> Start
-                fetchAndSet('T5', [
-                    [24.7500, 46.6250], [24.7555, 46.6305], [24.7600, 46.6350], [24.7650, 46.6400], [24.75, 46.72], [24.7500, 46.6250]
-                ]),
-                // T6: Nahda -> Bins -> F1 -> Start
-                fetchAndSet('T6', [
-                    [24.7700, 46.7800], [24.7850, 46.7400], [24.75, 46.72], [24.7700, 46.7800]
-                ]),
-                // T7: Ministry -> Bins -> F1 -> Start
-                fetchAndSet('T7', [
-                    [24.6805, 46.6205], [24.6700, 46.6300], [24.75, 46.72], [24.6805, 46.6205]
-                ])
-            ]);
+                // Build Circular Waypoints: Facility -> Bins -> Facility
+                // Default to F1 (North/Central)
+                let startPoint: [number, number] = [24.75, 46.72];
 
-            setRoutes(prev => prev.map(r => {
-                const update = routeUpdates.find(u => u.id === r.id);
-                if (update && update.path) return { ...r, currentPath: update.path };
-                return r;
+                // Heuristic for facility based on region
+                if (route.region?.includes('South')) startPoint = [24.60, 46.80]; // F2
+                if (route.region?.includes('North') || route.region?.includes('Airport')) startPoint = [24.95, 46.70]; // F3
+
+                const waypoints: [number, number][] = [];
+                waypoints.push(startPoint);
+                // Ensure bins are visited in the optimized order
+                route.assignedBinIds?.forEach(id => {
+                    const b = routeBins.find(bin => bin.id === id);
+                    if (b) waypoints.push([b.lat, b.lng]);
+                });
+                waypoints.push(startPoint); // Return to base for circularity
+
+                const path = await fetchRouteGeometry(waypoints);
+                return { ...route, currentPath: path || [] };
             }));
+
+            setDisplayRoutes(calculatedRoutes);
         };
-        updateRoutes();
-    }, []);
 
-    // Get position helper
-    const getPosition = (path: [number, number][], t: number): [number, number] => {
-        if (!path || path.length < 2) return [0, 0];
-        const total = path.length - 1;
-        const scaled = t * total;
-        const idx = Math.floor(scaled);
-        const segment = scaled - idx;
-        if (idx >= total) return path[total];
-        const start = path[idx];
-        const end = path[idx + 1];
-        return [start[0] + (end[0] - start[0]) * segment, start[1] + (end[1] - start[1]) * segment];
-    };
+        if (dynamicRoutes.length > 0 && bins.length > 0) {
+            updateRoutes();
+        }
+    }, [bins, contextRoutes, contextTrucks]); // Recalculate if any asset changes
 
-    // Advanced Simulation Loop
+    // Simulation Loop
     useEffect(() => {
         let animationFrameId: number;
-        const duration = 20000; // 20s loop
+        const duration = 45000; // Slower loop (45s) for realism
 
         const animate = (time: number) => {
             if (startTimeRef.current === null) startTimeRef.current = time;
             const elapsed = time - startTimeRef.current;
             const newProgress = (elapsed % duration) / duration;
 
-            // 1. Check for Bin Collection
-            // For each route, where is the truck?
-            routes.forEach(route => {
-                // If this route is moving (simplified: all move together in this demo)
-                // In real app, each has unique progress. Here we use global progress for sync demo.
-                if (!route.currentPath) return;
-                const pos = getPosition(route.currentPath, newProgress);
+            // Update Logic
+            setSimulatedBins(currentBins => {
+                const nextBins = currentBins.map(bin => {
+                    // Very slow natural fill 
+                    // 0.005 per frame -> ~0.3 per second -> ~20% per minute
+                    let newFill = bin.fillLevel;
+                    if (newFill < 100) newFill += 0.005;
+                    return { ...bin, fillLevel: newFill };
+                });
 
+                // Truck Collection Logic
+                displayRoutes.forEach(route => {
+                    if (!route.currentPath || route.currentPath.length < 2) return;
 
-                // Check distance to all bins
-                setSimulatedBins(currentBins => {
-                    return currentBins.map(bin => {
-                        const dist = Math.sqrt(Math.pow(bin.lat - pos[0], 2) + Math.pow(bin.lng - pos[1], 2));
+                    // Calculate Truck Position
+                    const path = route.currentPath;
+                    const totalWin = path.length - 1;
+                    const scaled = newProgress * totalWin;
+                    const idx = Math.floor(scaled);
+                    const segment = scaled - idx;
 
-                        // Truck is VERY close to bin (< 0.002 degrees approx 200m visually)
-                        if (dist < 0.003) {
-                            if (bin.fillLevel > 5) {
-                                // EMPTY THE BIN!
-                                setSimulatedBins(current => current.map(b => b.id === bin.id ? { ...b, fillLevel: 0 } : b));
-                                if (!activeNotification) {
-                                    setActiveNotification(`${route.name} collecting waste from Bin ${bin.id}...`);
-                                    // Clear notification after 3 seconds to allow new ones
-                                    setTimeout(() => setActiveNotification(null), 3000);
+                    if (idx >= totalWin) return; // End of path
+
+                    const start = path[idx];
+                    const end = path[idx + 1];
+                    const truckPos: [number, number] = [
+                        start[0] + (end[0] - start[0]) * segment,
+                        start[1] + (end[1] - start[1]) * segment
+                    ];
+
+                    const currentLoad = truckLoads[route.id] || 0;
+
+                    // Only interact with bins if NOT full
+                    if (currentLoad < 99) {
+                        const myBins = nextBins.filter(b => route.assignedBinIds?.includes(b.id));
+
+                        myBins.forEach(bin => {
+                            const dist = Math.sqrt(Math.pow(bin.lat - truckPos[0], 2) + Math.pow(bin.lng - truckPos[1], 2));
+
+                            // Interaction Radius (approx 200m)
+                            if (dist < 0.002) {
+                                if (bin.fillLevel > 5) {
+                                    // Collect
+                                    const amount = bin.fillLevel;
+                                    setTruckLoads(prev => ({ ...prev, [route.id]: Math.min(100, (prev[route.id] || 0) + (amount * 0.3)) }));
+
+                                    // Empty bin
+                                    const bIndex = nextBins.findIndex(nb => nb.id === bin.id);
+                                    if (bIndex > -1) nextBins[bIndex].fillLevel = 0;
+
+                                    if (!activeNotification) {
+                                        setActiveNotification(`${route.name} collecting from Bin ${bin.id}`);
+                                        setTimeout(() => setActiveNotification(null), 2000);
+                                    }
                                 }
-                                return { ...bin, fillLevel: 0 };
                             }
-                        } else {
-                            // Slowly refill bin if it was empty, to simulate life
-                            if (bin.fillLevel < 100 && Math.random() > 0.98) {
-                                return { ...bin, fillLevel: Math.min(100, bin.fillLevel + 0.1) };
+                        });
+                    }
+
+                    // Check if at Facility (Start/End of loop)
+                    // Loop resets at 0/1. If close to 1 (end), dump.
+                    if (newProgress > 0.98) {
+                        if (currentLoad > 0) {
+                            // Dump
+                            setTruckLoads(prev => ({ ...prev, [route.id]: 0 }));
+                            if (!activeNotification) {
+                                setActiveNotification(`${route.name} unloaded at Facility`);
+                                setTimeout(() => setActiveNotification(null), 3000);
                             }
                         }
-                        return bin;
-                    });
+                    }
                 });
-            });
 
-            // 2. Facility Drop logic
-            if (newProgress > 0.98 && newProgress < 0.99) {
-                if (!activeNotification) setActiveNotification("Trucks arriving at Facility for disposal...");
-            } else if (newProgress < 0.01) {
-                // Only clear if it's the facility message or old
-                // Actually relying on timeout above for bins.
-                // For facility, we can just let it clear naturally or force it.
-                // Let's safe guard:
-                if (activeNotification === "Trucks arriving at Facility for disposal...") setActiveNotification(null);
-            }
+                return nextBins;
+            });
 
             setProgress(newProgress);
             animationFrameId = requestAnimationFrame(animate);
@@ -247,34 +338,33 @@ const RoutesPage = () => {
 
         animationFrameId = requestAnimationFrame(animate);
         return () => cancelAnimationFrame(animationFrameId);
-    }, [routes, activeNotification]);
+    }, [displayRoutes, activeNotification, truckLoads]); // Only depend on stable refs effectively
 
+    if (user?.role !== 'admin' && user?.role !== 'manager' && user?.role !== 'finance') {
+        return (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                <h2>Access Restricted</h2>
+                <p>You do not have permission to view this page.</p>
+            </div>
+        );
+    }
 
     return (
         <div style={{ position: 'relative', height: 'calc(100vh - 100px)', borderRadius: '16px', overflow: 'hidden', boxShadow: 'var(--shadow-lg)' }}>
 
-            {/* Floating Overlay Panel - IMPROVED UX */}
+            {/* Stats Overlay */}
             <div style={{
-                position: 'absolute',
-                top: '20px',
-                left: '20px',
-                width: '320px',
-                zIndex: 1000,
-                background: 'rgba(30, 41, 59, 0.9)', // Darker, glass feel
-                backdropFilter: 'blur(12px)',
-                borderRadius: '16px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                padding: '1.5rem',
-                color: 'white',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+                position: 'absolute', top: '20px', left: '20px', width: '320px', zIndex: 1000,
+                background: 'rgba(30, 41, 59, 0.9)', backdropFilter: 'blur(12px)', borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.1)', padding: '1.5rem', color: 'white'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
                     <div style={{ padding: '0.75rem', background: 'var(--accent-admin)', borderRadius: '12px' }}>
                         <Navigation size={24} color="white" />
                     </div>
                     <div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Smart Routing</h2>
-                        <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.7 }}>Live Fleet Tracking</p>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Live Operations</h2>
+                        <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.7 }}>Real-time Fleet Tracking</p>
                     </div>
                 </div>
 
@@ -292,157 +382,146 @@ const RoutesPage = () => {
                     </div>
                 </div>
 
-                {/* Critical Alerts Section */}
-                {simulatedBins.some(b => b.fillLevel > 80) && (
-                    <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', border: '1px solid var(--accent-danger)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-danger)', fontWeight: 700, fontSize: '0.8rem' }}>
-                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-danger)', animation: 'pulse 1s infinite' }}></div>
-                                CRITICAL LEVELS
-                            </div>
-                            {simulatedBins.filter(b => b.fillLevel > 80).length > 1 && (
-                                <span style={{ fontSize: '0.7rem', color: 'var(--accent-manager)', background: 'rgba(52, 211, 153, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-                                    Optimizing Routes...
-                                </span>
-                            )}
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                            {simulatedBins.filter(b => b.fillLevel > 80).map(b => (
-                                <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                                    <span>Bin {b.id}</span>
-                                    <span style={{ color: 'var(--accent-danger)', fontWeight: 600 }}>{Math.round(b.fillLevel)}%</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                <div style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, opacity: 0.5, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Active Fleets</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <div
-                            onClick={() => setSelectedRoute(null)}
-                            style={{
-                                padding: '0.75rem',
-                                borderRadius: '10px',
-                                background: selectedRoute === null ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                border: selectedRoute === null ? '1px solid rgba(255,255,255,0.2)' : '1px solid transparent'
-                            }}
-                        >
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981', boxShadow: '0 0 8px #10B981' }}></div>
-                            <span style={{ fontSize: '0.9rem' }}>Show All Trucks</span>
-                        </div>
-
-                        {routes.map(r => (
-                            <div
-                                key={r.id}
-                                onClick={() => setSelectedRoute(r.id)}
+                {/* Truck List */}
+                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {displayRoutes.map(r => {
+                        const load = truckLoads[r.id] || 0;
+                        const isFull = load >= 99;
+                        return (
+                            <div key={r.id}
+                                onClick={() => setSelectedRoute(r.id === selectedRoute ? null : r.id)}
                                 style={{
-                                    padding: '0.75rem',
-                                    borderRadius: '10px',
-                                    background: selectedRoute === r.id ? 'var(--accent-admin)' : 'rgba(255,255,255,0.03)',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                                    padding: '0.75rem', marginBottom: '0.5rem', borderRadius: '10px',
+                                    background: selectedRoute === r.id ? 'var(--accent-admin)' : 'rgba(255,255,255,0.05)',
+                                    cursor: 'pointer', border: isFull ? '1px solid #EF4444' : '1px solid rgba(255,255,255,0.1)'
                                 }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <Truck size={16} />
-                                    <div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{r.name}</div>
-                                        <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{r.driver} • {r.distance}km • {r.assignedBinIds?.length || 0} Bins</div>
-                                    </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                    <span style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        {r.name}
+                                        {isFull && <AlertTriangle size={14} color="#EF4444" />}
+                                    </span>
+                                    <span style={{ fontSize: '0.8rem', opacity: 0.8, color: isFull ? '#EF4444' : 'inherit' }}>
+                                        {isFull ? 'Returning to Base' : `${Math.round(load)}% Load`}
+                                    </span>
                                 </div>
-                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: r.efficiency > 90 ? '#10B981' : '#F59E0B' }}>
-                                    {r.efficiency}%
+                                {/* Load Bar */}
+                                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
+                                    <div style={{
+                                        width: `${load}%`, height: '100%', borderRadius: '2px',
+                                        background: load > 90 ? '#EF4444' : '#10B981',
+                                        transition: 'width 0.5s'
+                                    }}></div>
+                                </div>
+                                <div style={{ fontSize: '0.7rem', marginTop: '0.25rem', opacity: 0.6 }}>
+                                    {r.assignedBinIds?.length || 0} Bins • {r.driver}
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* Notification Float */}
+            {/* Notification */}
             {activeNotification && (
                 <div style={{
-                    position: 'absolute',
-                    top: '20px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: '#10B981',
-                    color: 'white',
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '50px',
-                    fontWeight: 600,
-                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
-                    zIndex: 2000,
-                    animation: 'bounce 0.5s'
+                    position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)',
+                    background: activeNotification.includes('unloaded') ? '#3B82F6' : '#10B981', color: 'white', padding: '0.75rem 1.5rem',
+                    borderRadius: '50px', fontWeight: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                    zIndex: 2000, animation: 'bounce 0.5s'
                 }}>
                     {activeNotification}
                 </div>
             )}
 
-            <MapContainer
-                center={[24.72, 46.68]}
-                zoom={13}
-                style={{ height: '100%', width: '100%' }}
-                zoomControl={false}
-                scrollWheelZoom={true}
-                dragging={true}
+            {/* Map Style Toggle */}
+            <div style={{ position: 'absolute', bottom: '20px', right: '20px', zIndex: 1000, background: 'white', borderRadius: '8px', padding: '0.5rem', cursor: 'pointer' }}
+                onClick={() => setMapStyle(s => s === 'dark' ? 'light' : 'dark')}
             >
-                <MapRecenter selectedRoute={selectedRoute} routes={routes} />
+                <Layers color="black" />
+            </div>
+
+            <MapContainer center={[24.7136, 46.6753]} zoom={12} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+                <MapRecenter selectedRoute={selectedRoute} routes={displayRoutes} />
                 <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    url={mapStyle === 'dark'
+                        ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                        : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    }
                     attribution='&copy; CARTO'
                 />
 
                 {/* Facilities */}
                 {FACILITIES.map(f => (
-                    <Marker
-                        key={f.id}
-                        position={f.id === 'F1' ? [24.75, 46.72] : f.id === 'F2' ? [24.60, 46.80] : [24.95, 46.70]}
-                        icon={getFacilityIcon(f.type)}
-                    >
-                        <Popup><strong>{f.name}</strong><br />{f.description}</Popup>
+                    <Marker key={f.id} position={[f.lat || 0, f.lng || 0]} icon={getFacilityIcon(f.type)}>
+                        <Popup><strong>{f.name}</strong><br />{f.type}</Popup>
                     </Marker>
                 ))}
 
-                {/* Bins with Simulated Levels */}
-                {simulatedBins.map(bin => (
-                    <CircleMarker
-                        key={bin.id}
-                        center={[bin.lat, bin.lng]}
-                        radius={bin.fillLevel > 0 ? 6 : 4} // Smaller if empty
-                        fillColor={bin.fillLevel < 50 ? '#10B981' : bin.fillLevel > 90 ? '#EF4444' : '#F59E0B'}
-                        color="white"
-                        weight={2}
-                        fillOpacity={1}
-                    >
-                        <Popup>
-                            <strong>Bin #{bin.id}</strong><br />
-                            Level: {Math.round(bin.fillLevel)}%<br />
-                            (Live Simulation)
-                        </Popup>
-                    </CircleMarker>
-                ))}
+                {/* Bins */}
+                {simulatedBins.map(bin => {
+                    // Filter logic: show bins if no route selected, OR if bin belongs to selected route
+                    const isVisible = !selectedRoute || displayRoutes.find(r => r.id === selectedRoute)?.assignedBinIds?.includes(bin.id);
+                    if (!isVisible) return null;
 
-                {/* Routes & Trucks */}
-                {routes.map(r => {
+                    return (
+                        <CircleMarker
+                            key={bin.id}
+                            center={[bin.lat, bin.lng]}
+                            radius={6}
+                            fillColor={bin.fillLevel > 90 ? '#EF4444' : bin.fillLevel > 50 ? '#F59E0B' : '#10B981'}
+                            color="white"
+                            weight={2}
+                            fillOpacity={1}
+                        >
+                            <Popup>
+                                <strong>Bin {bin.id}</strong><br />
+                                Level: {Math.round(bin.fillLevel)}%
+                            </Popup>
+                        </CircleMarker>
+                    );
+                })}
+
+                {/* Routes */}
+                {displayRoutes.map(r => {
                     if (selectedRoute && selectedRoute !== r.id) return null;
                     if (!r.currentPath || r.currentPath.length < 2) return null;
-                    const isActive = selectedRoute === r.id;
-                    const pos = getPosition(r.currentPath, progress);
+
+                    const load = truckLoads[r.id] || 0;
+                    const isFull = load >= 99;
+
+                    // Render Truck
+                    const path = r.currentPath;
+                    const total = path.length - 1;
+                    const scaled = progress * total;
+                    const idx = Math.floor(scaled);
+                    const segment = scaled - idx;
+                    let pos: [number, number] = [0, 0];
+
+                    if (idx < total) {
+                        const start = path[idx];
+                        const end = path[idx + 1];
+                        pos = [
+                            start[0] + (end[0] - start[0]) * segment,
+                            start[1] + (end[1] - start[1]) * segment
+                        ];
+                    } else {
+                        pos = path[total];
+                    }
 
                     return (
                         <div key={r.id}>
-                            <Polyline positions={r.currentPath} color={isActive ? '#10B981' : 'rgba(255,255,255,0.2)'} weight={isActive ? 5 : 3} />
-                            <Marker position={pos} icon={truckIcon} />
+                            <Polyline positions={r.currentPath} color={selectedRoute === r.id ? '#10B981' : 'rgba(255,255,255,0.2)'} weight={4} />
+                            <Marker position={pos} icon={isFull ? fullTruckIcon : truckIcon}>
+                                <Popup>
+                                    <strong>{r.name}</strong><br />
+                                    Status: {isFull ? 'Returning to Facility (Full)' : 'Collecting Waste'}<br />
+                                    Load: {Math.round(load)}%
+                                </Popup>
+                            </Marker>
                         </div>
-                    )
+                    );
                 })}
-
             </MapContainer>
         </div>
     );
