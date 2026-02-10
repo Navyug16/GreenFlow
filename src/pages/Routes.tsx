@@ -88,15 +88,18 @@ const getFacilityIcon = (type: string) => new DivIcon({
     iconAnchor: [16, 16]
 });
 
-// Function to calculate distance between two points
-const getDistance = (p1: { lat: number, lng: number }, p2: { lat: number, lng: number }) => {
-    return Math.sqrt(Math.pow(p1.lat - p2.lat, 2) + Math.pow(p1.lng - p2.lng, 2));
-};
+
 
 const RoutesPage = () => {
-    const { bins, routes: contextRoutes, trucks: contextTrucks } = useData();
+    const { bins, routes: contextRoutes, trucks: contextTrucks, updateBin, addTruck } = useData();
     const [displayRoutes, setDisplayRoutes] = useState<any[]>([]);
-    const [simulatedBins, setSimulatedBins] = useState(bins);
+    const [simulatedBins, setSimulatedBins] = useState(() =>
+        bins.map(b => ({
+            ...b,
+            fillRate: 0.005 + Math.random() * 0.02,
+            priority: 0
+        }))
+    );
     const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [activeNotification, setActiveNotification] = useState<string | null>(null);
@@ -108,143 +111,191 @@ const RoutesPage = () => {
     const startTimeRef = useRef<number | null>(null);
     const { user } = useAuth();
 
-    // --- DYNAMIC ALGO: ASSIGN BINS TO TRUCKS BASED ON REGION ---
-    // Instead of using hardcoded mock assignments, we recalculate them
-    const dynamicRoutes = contextRoutes.map(route => {
-        // Find truck details for this route
-        const truck = contextTrucks.find(t => t.id === route.truckId);
-        const region = truck?.region || route.region || 'Central Riyadh';
+    // Truck Current Positions: routeId -> [lat, lng]
+    const truckPositionsRef = useRef<Record<string, [number, number]>>({});
+    const lastOptimizationRef = useRef<number>(0);
 
-        let assignedBinIds: string[] = [];
+    // Initial load check
+    useEffect(() => {
+        if (contextRoutes.length > 0 && displayRoutes.length === 0) {
+            // Initialize positions
+            contextRoutes.forEach(r => {
+                truckPositionsRef.current[r.id] = r.region?.includes('North') ? [24.95, 46.70] : [24.75, 46.72];
+            });
+        }
+    }, [contextRoutes]);
 
-        // 1. Get all bins in this region
-        const regionalBins = bins.filter(b => b.region === region && b.status !== 'maintenance');
+    // Helper to fetch OSRM path
+    const fetchRouteGeometry = async (waypoints: [number, number][]) => {
+        try {
+            const coordString = waypoints.map(p => `${p[1]},${p[0]}`).join(';');
+            const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data.code === 'Ok' && data.routes && data.routes[0]) {
+                return data.routes[0].geometry.coordinates.map((c: number[]) => [c[1], c[0]]) as [number, number][];
+            }
+        } catch (error) { console.error(error); }
+        return null;
+    };
 
-        // 2. Simple partitioning: Assign bins to trucks in the same region
-        // Get all routes in this region to split bins among them
-        const regionalRoutes = contextRoutes.filter(r => {
-            const t = contextTrucks.find(trk => trk.id === r.truckId);
-            return (t?.region === region) || (r.region === region);
-        });
+    /**
+     * DYNAMIC ROUTING ENGINE
+     */
+    const optimizeRoutes = async (currentBins: any[], currentMsg: string | null) => {
+        const now = Date.now();
+        // Throttle: Only optimize every 10 seconds or if forced
+        if (now - lastOptimizationRef.current < 10000 && !currentMsg?.includes('Emergency')) return;
+        lastOptimizationRef.current = now;
 
-        // Sort routes by ID to ensure consistent assignment order
-        regionalRoutes.sort((a, b) => a.id.localeCompare(b.id));
-        const routeIndex = regionalRoutes.findIndex(r => r.id === route.id);
+        // 1. Identify Critical Bins
+        const criticalBins = currentBins.filter((b: any) => b.fillLevel > 80);
 
-        if (regionalBins.length > 0 && regionalRoutes.length > 0 && routeIndex >= 0) {
-            // Distribute bins: Loop through bins and assign round-robin
-            assignedBinIds = regionalBins
-                .filter((_, idx) => idx % regionalRoutes.length === routeIndex)
-                .map(b => b.id);
+        // 2. Manage Trucks (Add Reinforcement if needed)
+        // 2. Manage Trucks (Add Reinforcement if needed)
+        // contextRoutes roughly equals active trucks.
+        // We use contextTrucks to check total fleet size available or active
+        const activeTrucks = contextRoutes.length;
+
+        if (criticalBins.length / (activeTrucks || 1) > 1.5 && activeTrucks < 15) {
+            const newCode = `T-${Math.floor(Math.random() * 1000)}`;
+            const newTruck = {
+                id: `T-${Date.now()}`,
+                code: newCode,
+                type: 'Emergency Unit',
+                status: 'active',
+                health: 100,
+                region: 'Dynamic - ' + (criticalBins[0]?.region || 'Central'),
+                fuel: 100,
+                mileage: 0,
+                lastService: 'New',
+                driver: 'Auto-Pilot',
+                plate: newCode,
+                route: 'Emergency Route',
+                capacity: '10 Tons'
+            };
+
+            // Add to Global Context directly
+            await addTruck(newTruck as any);
+
+            setActiveNotification("⚠️ High Demand! Deployed Emergency Truck.");
+            return; // Context update will trigger re-run
         }
 
-        // TSP-ish Sort: Order bins by nearest neighbor starting from a "hub" (Facility)
-        // Heuristic Hub
-        let hub = { lat: 24.75, lng: 46.72 };
-        if (region.includes('South')) hub = { lat: 24.60, lng: 46.80 };
-        if (region.includes('North')) hub = { lat: 24.95, lng: 46.70 };
+        // 3. Assign Bins to Trucks
+        const allRoutes = [...contextRoutes];
 
-        if (assignedBinIds.length > 0) {
-            const sortedBins: string[] = [];
-            let currentParams = hub;
-            const pool = assignedBinIds.map(id => bins.find(b => b.id === id)).filter(b => b !== undefined) as any[];
+        // Clone Bins to track assignment
+        let unassignedBins = [...currentBins].filter((b: any) => b.fillLevel > 30);
+        unassignedBins.sort((a: any, b: any) => b.fillLevel - a.fillLevel);
 
-            while (pool.length > 0) {
-                // Find closest to current
+        const newDisplayRoutes = await Promise.all(allRoutes.map(async (route) => {
+            const currentPos = truckPositionsRef.current[route.id] ||
+                (route.region?.includes('North') ? [24.95, 46.70] : [24.75, 46.72]);
+
+            // Assign closest high-priority bins to this truck
+            const capacity = 4;
+            const myBins: any[] = [];
+            let truckLoc = { lat: currentPos[0], lng: currentPos[1] };
+
+            for (let i = 0; i < capacity; i++) {
+                if (unassignedBins.length === 0) break;
+
                 let closestIdx = -1;
                 let minDst = Infinity;
-                pool.forEach((b, idx) => {
-                    const d = getDistance(currentParams, { lat: b.lat, lng: b.lng });
-                    if (d < minDst) {
-                        minDst = d;
+
+                unassignedBins.forEach((b: any, idx: number) => {
+                    const dist = Math.sqrt(Math.pow(b.lat - truckLoc.lat, 2) + Math.pow(b.lng - truckLoc.lng, 2));
+                    const score = dist - (b.fillLevel > 90 ? 0.05 : 0);
+                    if (score < minDst) {
+                        minDst = score;
                         closestIdx = idx;
                     }
                 });
 
                 if (closestIdx !== -1) {
-                    const nextBin = pool.splice(closestIdx, 1)[0];
-                    sortedBins.push(nextBin.id);
-                    currentParams = { lat: nextBin.lat, lng: nextBin.lng };
-                } else {
-                    break;
+                    const chosen = unassignedBins[closestIdx];
+                    myBins.push(chosen);
+                    truckLoc = { lat: chosen.lat, lng: chosen.lng };
+                    unassignedBins.splice(closestIdx, 1);
                 }
             }
-            assignedBinIds = sortedBins;
-        }
 
-        return { ...route, assignedBinIds };
-    });
+            // Facility Location
+            let facility = [24.75, 46.72];
+            if (route.region?.includes('North')) facility = [24.83, 46.63];
+            if (route.region?.includes('South')) facility = [24.52, 46.72];
+
+            const waypoints: [number, number][] = [];
+            waypoints.push(currentPos as [number, number]);
+            myBins.forEach((b: any) => waypoints.push([b.lat, b.lng]));
+            waypoints.push(facility as [number, number]);
+
+            if (myBins.length === 0) {
+                return { ...route, assignedBinIds: [], currentPath: route.currentPath || [] };
+            }
+
+            const path = await fetchRouteGeometry(waypoints);
+
+            return {
+                ...route,
+                assignedBinIds: myBins.map((b: any) => b.id),
+                currentPath: path || []
+            };
+        }));
+
+        setDisplayRoutes(newDisplayRoutes);
+        startTimeRef.current = performance.now();
+    };
 
     // Sync simulated Bins with real bins structure whenever meaningful changes happen (add/remove)
     useEffect(() => {
         setSimulatedBins(currentSims => {
-            // Add new bins
             const newBins = bins.filter(b => !currentSims.find(s => s.id === b.id));
-            // Remove deleted bins
             const keptBins = currentSims.filter(s => bins.find(b => b.id === s.id));
-
-            // For kept bins, preserve local simulation state (fillLevel) but take other updates
             return [...keptBins, ...newBins].map(b => {
                 const real = bins.find(r => r.id === b.id);
-                // If real bin exists, use its metadata but keep local fillLevel if it exists in currentSims
                 const existingSim = currentSims.find(s => s.id === b.id);
-                return real ? { ...real, fillLevel: existingSim ? existingSim.fillLevel : real.fillLevel } : b;
+                const base = real || b;
+                return {
+                    ...base,
+                    fillLevel: existingSim ? existingSim.fillLevel : base.fillLevel,
+                    fillRate: existingSim?.fillRate || (0.002 + Math.random() * 0.008),
+                    priority: existingSim?.priority || 0
+                };
             });
         });
     }, [bins]);
 
-    // Routing Logic to calculate Circular Paths
+    // Keep a ref of simulatedBins for the interval to access latest state without re-triggering
+    const simulatedBinsRef = useRef(simulatedBins);
+    useEffect(() => { simulatedBinsRef.current = simulatedBins; }, [simulatedBins]);
+
+    // Trigger Route Optimization periodically (every 5s check)
     useEffect(() => {
-        const fetchRouteGeometry = async (waypoints: [number, number][]) => {
-            try {
-                const coordString = waypoints.map(p => `${p[1]},${p[0]}`).join(';');
-                const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data.code === 'Ok' && data.routes && data.routes[0]) {
-                    return data.routes[0].geometry.coordinates.map((c: number[]) => [c[1], c[0]]) as [number, number][];
+        const interval = setInterval(() => {
+            if (simulatedBinsRef.current.length > 0) {
+                optimizeRoutes(simulatedBinsRef.current, null);
+            }
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [contextRoutes, contextTrucks]);
+
+    // Sync Simulation to Global Context (Every 2 seconds)
+    // This allows the "Assets" page to see the realtime fill levels from the map simulation
+    // Sync Simulation to Global Context (Every 2 seconds)
+    useEffect(() => {
+        const interval = setInterval(() => {
+            simulatedBinsRef.current.forEach(simBin => {
+                const realBin = bins.find(b => b.id === simBin.id);
+                // Sync intermediate levels every 2s if changed by > 5%
+                if (realBin && Math.abs(realBin.fillLevel - simBin.fillLevel) > 5) {
+                    updateBin(simBin.id, { fillLevel: Math.round(simBin.fillLevel) });
                 }
-            } catch (error) { console.error(error); }
-            return null;
-        };
-
-        const updateRoutes = async () => {
-            // Use dynamicRoutes calculated above
-            const calculatedRoutes = await Promise.all(dynamicRoutes.map(async (route) => {
-                // Find bins for this route using latest bins data
-                const routeBins = bins.filter(b => route.assignedBinIds?.includes(b.id));
-
-                // If no bins, return route with empty path
-                if (routeBins.length === 0) return { ...route, currentPath: [] };
-
-                // Build Circular Waypoints: Facility -> Bins -> Facility
-                // Default to F1 (North/Central)
-                let startPoint: [number, number] = [24.75, 46.72];
-
-                // Heuristic for facility based on region
-                if (route.region?.includes('South')) startPoint = [24.60, 46.80]; // F2
-                if (route.region?.includes('North') || route.region?.includes('Airport')) startPoint = [24.95, 46.70]; // F3
-
-                const waypoints: [number, number][] = [];
-                waypoints.push(startPoint);
-                // Ensure bins are visited in the optimized order
-                route.assignedBinIds?.forEach(id => {
-                    const b = routeBins.find(bin => bin.id === id);
-                    if (b) waypoints.push([b.lat, b.lng]);
-                });
-                waypoints.push(startPoint); // Return to base for circularity
-
-                const path = await fetchRouteGeometry(waypoints);
-                return { ...route, currentPath: path || [] };
-            }));
-
-            setDisplayRoutes(calculatedRoutes);
-        };
-
-        if (dynamicRoutes.length > 0 && bins.length > 0) {
-            updateRoutes();
-        }
-    }, [bins, contextRoutes, contextTrucks]); // Recalculate if any asset changes
+            });
+        }, 2000);
+        return () => clearInterval(interval);
+    }, [bins]);
 
     // Simulation Loop
     useEffect(() => {
@@ -259,10 +310,17 @@ const RoutesPage = () => {
             // Update Logic
             setSimulatedBins(currentBins => {
                 const nextBins = currentBins.map(bin => {
-                    // Very slow natural fill 
-                    // 0.005 per frame -> ~0.3 per second -> ~20% per minute
+                    // Random fill rate
                     let newFill = bin.fillLevel;
-                    if (newFill < 100) newFill += 0.005;
+                    // @ts-ignore
+                    const rate = bin.fillRate || 0.005;
+                    if (newFill < 100) newFill += rate;
+
+                    // Sync Critical Status
+                    if (newFill > 95 && bin.fillLevel <= 95) {
+                        updateBin(bin.id, { overflowStatus: true, status: 'critical', fillLevel: 96 });
+                    }
+
                     return { ...bin, fillLevel: newFill };
                 });
 
@@ -277,7 +335,9 @@ const RoutesPage = () => {
                     const idx = Math.floor(scaled);
                     const segment = scaled - idx;
 
-                    if (idx >= totalWin) return; // End of path
+                    // Safety Check
+                    if (idx < 0 || idx >= totalWin) return;
+                    if (!path[idx] || !path[idx + 1]) return;
 
                     const start = path[idx];
                     const end = path[idx + 1];
@@ -285,6 +345,9 @@ const RoutesPage = () => {
                         start[0] + (end[0] - start[0]) * segment,
                         start[1] + (end[1] - start[1]) * segment
                     ];
+
+                    // Update Position Ref for Dynamic Routing
+                    truckPositionsRef.current[route.id] = truckPos;
 
                     const currentLoad = truckLoads[route.id] || 0;
 
@@ -304,19 +367,23 @@ const RoutesPage = () => {
 
                                     // Empty bin
                                     const bIndex = nextBins.findIndex(nb => nb.id === bin.id);
-                                    if (bIndex > -1) nextBins[bIndex].fillLevel = 0;
+                                    if (bIndex > -1) {
+                                        nextBins[bIndex].fillLevel = 0;
+                                        // Sync Collection to Global Context
+                                        updateBin(bin.id, { fillLevel: 0, status: 'active', overflowStatus: false, lastCollection: 'Just now' });
+                                    }
 
                                     if (!activeNotification) {
                                         setActiveNotification(`${route.name} collecting from Bin ${bin.id}`);
                                         setTimeout(() => setActiveNotification(null), 2000);
                                     }
+
                                 }
                             }
                         });
                     }
 
                     // Check if at Facility (Start/End of loop)
-                    // Loop resets at 0/1. If close to 1 (end), dump.
                     if (newProgress > 0.98) {
                         if (currentLoad > 0) {
                             // Dump
@@ -498,15 +565,17 @@ const RoutesPage = () => {
                     const segment = scaled - idx;
                     let pos: [number, number] = [0, 0];
 
-                    if (idx < total) {
+                    if (idx < total && path[idx] && path[idx + 1]) {
                         const start = path[idx];
                         const end = path[idx + 1];
                         pos = [
                             start[0] + (end[0] - start[0]) * segment,
                             start[1] + (end[1] - start[1]) * segment
                         ];
-                    } else {
+                    } else if (path[total]) {
                         pos = path[total];
+                    } else {
+                        pos = path[0] || [0, 0];
                     }
 
                     return (
