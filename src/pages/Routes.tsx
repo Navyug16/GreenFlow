@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import L, { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Fuel, Truck as TruckIcon, Navigation, RefreshCw, AlertTriangle, Layers } from 'lucide-react';
+import { Fuel, Navigation, RefreshCw, AlertTriangle, Layers } from 'lucide-react';
 import { FACILITIES } from '../data/mockData';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
