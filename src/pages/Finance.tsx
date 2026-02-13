@@ -241,6 +241,58 @@ const FinancePage = () => {
                 </div>
             </div>
 
+            {/* Mock Trends & Transactions Section */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+                <div className="card">
+                    <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Activity size={18} color="var(--accent-finance)" /> Weekly Financial Trend (Mock)
+                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '200px', paddingBottom: '1rem', borderBottom: '1px solid var(--glass-border)' }}>
+                        {[...Array(7)].map((_, i) => {
+                            const rev = Math.floor(Math.random() * (15000 - 8000) + 8000);
+                            const cost = Math.floor(Math.random() * (12000 - 5000) + 5000);
+                            const day = new Date();
+                            day.setDate(day.getDate() - (6 - i));
+                            return (
+                                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '10%' }}>
+                                    <div style={{ display: 'flex', gap: '4px', alignItems: 'flex-end', height: '100%' }}>
+                                        <div title={`Revenue: ${rev}`} style={{ width: '12px', height: `${(rev / 20000) * 100}%`, background: 'var(--status-good)', borderRadius: '2px 2px 0 0' }} />
+                                        <div title={`Cost: ${cost}`} style={{ width: '12px', height: `${(cost / 20000) * 100}%`, background: 'var(--accent-finance)', borderRadius: '2px 2px 0 0' }} />
+                                    </div>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1rem', fontSize: '0.8rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><div style={{ width: 10, height: 10, background: 'var(--status-good)' }} /> Revenue</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><div style={{ width: 10, height: 10, background: 'var(--accent-finance)' }} /> Cost</div>
+                    </div>
+                </div>
+
+                <div className="card">
+                    <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem' }}>Recent Transactions</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {[...Array(5)].map((_, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem', paddingBottom: '0.75rem', borderBottom: i < 4 ? '1px solid var(--glass-border)' : 'none' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ padding: '0.4rem', background: i % 2 === 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)', borderRadius: '50%', color: i % 2 === 0 ? 'var(--status-good)' : 'var(--status-danger)' }}>
+                                        {i % 2 === 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontWeight: 500 }}>{['Recycled Mtls', 'Fuel Refill', 'Energy Grid', 'Maintenance', 'Waste Coll.'][i]}</div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{Math.floor(Math.random() * 60)} mins ago</div>
+                                    </div>
+                                </div>
+                                <div style={{ fontWeight: 600, color: i % 2 === 0 ? 'var(--status-good)' : 'var(--text-primary)' }}>
+                                    {i % 2 === 0 ? '+' : '-'}{Math.floor(Math.random() * 5000 + 500)} SAR
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             {/* Detailed Reporting Table */}
             <div className="card">
                 <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem' }}>Detailed Facility Financials</h3>

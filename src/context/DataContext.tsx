@@ -27,6 +27,8 @@ interface DataContextType {
     rejectRequest: (id: string) => void;
     resolveIncident: (id: string) => void;
     updateUserRole: (id: string, role: string) => void;
+    addUser: (user: User) => Promise<void>;
+    deleteUser: (id: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -390,12 +392,37 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const updateUserRole = async (userId: string, role: string) => {
         if (db) {
             try {
-                await updateDoc(doc(db, 'users', userId), { role });
+                const userRef = doc(db, 'users', userId);
+                await updateDoc(userRef, { role });
             } catch (e) {
                 console.error("Error updating user role", e);
             }
         } else {
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: role as any } : u));
+        }
+    };
+
+    const addUser = async (user: User) => {
+        if (db) {
+            try {
+                await setDoc(doc(db, 'users', user.id), user);
+            } catch (e) {
+                console.error("Error adding user", e);
+            }
+        } else {
+            setUsers(prev => [...prev, user]);
+        }
+    };
+
+    const deleteUser = async (id: string) => {
+        if (db) {
+            try {
+                await deleteDoc(doc(db, 'users', id));
+            } catch (e) {
+                console.error("Error deleting user", e);
+            }
+        } else {
+            setUsers(prev => prev.filter(u => u.id !== id));
         }
     };
 
@@ -512,7 +539,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <DataContext.Provider value={{ trucks, bins, facilities, requests, incidents, routes, machinery, users, addTruck, deleteTruck, addBin, deleteBin, updateBin, updateTruck, updateFacility, updateMachine, seedDatabase, addRequest, approveRequest, rejectRequest, resolveIncident, updateUserRole }}>
+        <DataContext.Provider value={{ trucks, bins, facilities, requests, incidents, routes, machinery, users, addTruck, deleteTruck, addBin, deleteBin, updateBin, updateTruck, updateFacility, updateMachine, seedDatabase, addRequest, approveRequest, rejectRequest, resolveIncident, updateUserRole, addUser, deleteUser }}>
             {children}
         </DataContext.Provider>
     );

@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import {
-    RefreshCw, Users, Shield,
-    Check, X, AlertTriangle, Activity, Settings,
-    BarChart3, Truck, Trash2, Zap, FileText
+    Check, X, AlertTriangle, Activity, Users, Shield,
+    BarChart3, Truck, Trash2, Zap, FileText, Plus
 } from 'lucide-react';
+import type { User } from '../types';
 
 const AdminPage = () => {
     const { user, auditLog } = useAuth(); // Get real audit log
@@ -19,20 +19,29 @@ const AdminPage = () => {
         );
     }
 
-    const { seedDatabase, users, updateUserRole, requests, approveRequest, rejectRequest, facilities, trucks, bins, incidents } = useData();
-    const [seeding, setSeeding] = useState(false);
-
-    // Local state for settings (Mock)
-    const [settings, setSettings] = useState({
-        fillThreshold: 90,
-        enableEmailAlerts: true,
-        maintenanceInterval: 30 // days
+    const { users, updateUserRole, addUser, requests, approveRequest, rejectRequest, facilities, trucks, bins, incidents } = useData();
+    const [showAddUser, setShowAddUser] = useState(false);
+    const [newUser, setNewUser] = useState<Partial<User>>({
+        name: '',
+        role: 'manager',
+        avatar: `https://i.pravatar.cc/150?u=${Math.random()}`
     });
 
-    const handleSeed = async () => {
-        setSeeding(true);
-        await seedDatabase();
-        setSeeding(false);
+    const handleAddUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newUser.name) return;
+
+        const userToAdd: User = {
+            id: `u-${Date.now()}`,
+            name: newUser.name,
+            role: newUser.role as any,
+            avatar: newUser.avatar || `https://i.pravatar.cc/150?u=${Date.now()}`,
+            // Add other required fields if any
+        };
+
+        await addUser(userToAdd);
+        setShowAddUser(false);
+        setNewUser({ name: '', role: 'manager', avatar: `https://i.pravatar.cc/150?u=${Math.random()}` });
     };
 
     if (user?.role !== 'admin') {
@@ -52,7 +61,6 @@ const AdminPage = () => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            {/* ... (Header and KPIs sections remain unchanged) ... */}
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
@@ -120,9 +128,146 @@ const AdminPage = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
-                {/* Pending Approvals */}
-                {/* ... (Approvals logic remains same) ... */}
+            {/* User Management Card (Moved Here) */}
+            <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ padding: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '12px', color: 'var(--accent-admin)' }}>
+                            <Users size={24} />
+                        </div>
+                        <div>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem' }}>User Management</h3>
+                            <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Role & Access Control</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setShowAddUser(true)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.5rem 1rem',
+                            background: 'var(--accent-admin)',
+                            color: 'var(--bg-main)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontWeight: 600,
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <Plus size={18} />
+                        Add User
+                    </button>
+                </div>
+
+                {showAddUser && (
+                    <div style={{
+                        marginBottom: '1.5rem',
+                        padding: '1.5rem',
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid var(--glass-border)',
+                        borderRadius: '12px',
+                        animation: 'fadeIn 0.3s ease'
+                    }}>
+                        <h4 style={{ margin: '0 0 1rem 0' }}>Add New Team Member</h4>
+                        <form onSubmit={handleAddUser} style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', alignItems: 'end' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Full Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. John Doe"
+                                    value={newUser.name}
+                                    onChange={e => setNewUser({ ...newUser, name: e.target.value })}
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Role</label>
+                                <select
+                                    value={newUser.role}
+                                    onChange={e => setNewUser({ ...newUser, role: e.target.value as any })}
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+                                >
+                                    <option value="manager">Manager</option>
+                                    <option value="engineer">Engineer</option>
+                                    <option value="finance">Finance</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Avatar URL (Optional)</label>
+                                <input
+                                    type="text"
+                                    placeholder="https://..."
+                                    value={newUser.avatar}
+                                    onChange={e => setNewUser({ ...newUser, avatar: e.target.value })}
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                    type="submit"
+                                    style={{ flex: 1, padding: '0.75rem', background: 'var(--status-good)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                                >
+                                    Create User
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddUser(false)}
+                                    style={{ padding: '0.75rem', background: 'var(--glass-border)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                    {users.length > 0 ? (
+                        users.map(u => (
+                            <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--glass-border)', overflow: 'hidden' }}>
+                                        <img src={u.avatar} alt={u.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
+                                    <div>
+                                        <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>{u.name || 'Unknown User'}</div>
+                                        <div style={{ fontSize: '0.75rem', color: u.role === 'admin' ? 'var(--status-good)' : 'var(--text-tertiary)' }}>{u.role.toUpperCase()}</div>
+                                    </div>
+                                </div>
+                                <select
+                                    value={u.role}
+                                    onChange={(e) => updateUserRole(u.id, e.target.value)}
+                                    style={{
+                                        fontSize: '0.75rem',
+                                        background: 'rgba(0,0,0,0.2)',
+                                        padding: '0.25rem 0.5rem',
+                                        borderRadius: '4px',
+                                        color: 'white',
+                                        border: '1px solid var(--glass-border)',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <option value="admin">Admin</option>
+                                    <option value="manager">Manager</option>
+                                    <option value="engineer">Engineer</option>
+                                    <option value="finance">Finance</option>
+                                </select>
+                            </div>
+                        ))
+                    ) : (
+                        <div style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: '1rem' }}>
+                            No users found in database.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Main Content Grid: Pending Requests, Facilities, Activity Log */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                {/* Pending Requests */}
                 <div className="card">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
                         <FileText size={20} color="var(--accent-admin)" />
@@ -146,15 +291,14 @@ const AdminPage = () => {
                                 }}>
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                            <span style={{ fontWeight: 600, fontSize: '1rem' }}>{req.type} Request</span>
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>by {req.requester}</span>
+                                            <span style={{ fontWeight: 600, fontSize: '1rem' }}>{req.type}</span>
                                         </div>
                                         <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                                             {req.details || req.notes}
                                         </div>
                                         <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                                            <span>Date: {req.date}</span>
-                                            {req.cost && <span>Cost: {req.cost} SAR</span>}
+                                            <span>{req.date}</span>
+                                            {req.cost && <span>{req.cost} SAR</span>}
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -209,9 +353,7 @@ const AdminPage = () => {
                         ))}
                     </div>
                 </div>
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 2fr)', gap: '1.5rem' }}>
                 {/* Activity Log */}
                 <div className="card">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
@@ -235,129 +377,8 @@ const AdminPage = () => {
                         )}
                     </div>
                 </div>
-
-                {/* Database & Settings */}
-                <div className="card">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                        <Settings size={20} color="var(--text-secondary)" />
-                        <h3 style={{ margin: 0, fontSize: '1.25rem' }}>System Controls</h3>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                        {/* Settings Form */}
-                        <div>
-                            <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-secondary)' }}>Global Thresholds</h4>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.875rem', color: 'var(--text-tertiary)', marginBottom: '0.5rem' }}>Max Bin Fill Threshold (%)</label>
-                                    <input
-                                        type="number"
-                                        value={settings.fillThreshold}
-                                        onChange={(e) => setSettings({ ...settings, fillThreshold: Number(e.target.value) })}
-                                        style={{ width: '100%', padding: '0.5rem', background: 'var(--bg-main)', border: '1px solid var(--glass-border)', borderRadius: '4px', color: 'white' }}
-                                    />
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={settings.enableEmailAlerts}
-                                        onChange={(e) => setSettings({ ...settings, enableEmailAlerts: e.target.checked })}
-                                        id="emailAlerts"
-                                    />
-                                    <label htmlFor="emailAlerts" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Enable Email Alerts</label>
-                                </div>
-                                <button style={{ padding: '0.5rem', background: 'var(--accent-admin)', border: 'none', borderRadius: '4px', color: 'white', cursor: 'pointer', marginTop: 'auto' }}>
-                                    Save Configuration
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Database Actions */}
-                        <div>
-                            <h4 style={{ margin: '0 0 1rem 0', color: 'var(--accent-warning)' }}>Danger Zone</h4>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1rem' }}>
-                                Reset the system database to default mock data.
-                            </p>
-                            <button
-                                onClick={handleSeed}
-                                disabled={seeding}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    background: 'var(--accent-warning)',
-                                    color: 'var(--bg-main)',
-                                    border: 'none',
-                                    borderRadius: 'var(--radius-sm)',
-                                    fontWeight: 600,
-                                    cursor: seeding ? 'wait' : 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '0.5rem',
-                                    opacity: seeding ? 0.7 : 1
-                                }}
-                            >
-                                {seeding ? <RefreshCw size={20} className="spin" /> : <RefreshCw size={20} />}
-                                {seeding ? 'Seeding Database...' : 'Reset Database'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
-
-            {/* User Management Card (Visual) */}
-            <div className="card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                    <div style={{ padding: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '12px', color: 'var(--accent-admin)' }}>
-                        <Users size={24} />
-                    </div>
-                    <div>
-                        <h3 style={{ margin: 0, fontSize: '1.25rem' }}>User Management</h3>
-                        <p style={{ margin: 0, color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Role & Access Control</p>
-                    </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                    {users.length > 0 ? (
-                        users.map(u => (
-                            <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--glass-border)', overflow: 'hidden' }}>
-                                        <img src={u.avatar} alt={u.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>{u.name || 'Unknown User'}</div>
-                                        <div style={{ fontSize: '0.75rem', color: u.role === 'admin' ? 'var(--status-good)' : 'var(--text-tertiary)' }}>{u.role.toUpperCase()}</div>
-                                    </div>
-                                </div>
-                                <select
-                                    value={u.role}
-                                    onChange={(e) => updateUserRole(u.id, e.target.value)}
-                                    style={{
-                                        fontSize: '0.75rem',
-                                        background: 'rgba(0,0,0,0.2)',
-                                        padding: '0.25rem 0.5rem',
-                                        borderRadius: '4px',
-                                        color: 'white',
-                                        border: '1px solid var(--glass-border)',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    <option value="admin">Admin</option>
-                                    <option value="manager">Manager</option>
-                                    <option value="engineer">Engineer</option>
-                                    <option value="finance">Finance</option>
-                                </select>
-                            </div>
-                        ))
-                    ) : (
-                        <div style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: '1rem' }}>
-                            No users found in database.
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
+        </div >
     );
 };
 

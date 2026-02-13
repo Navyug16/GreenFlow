@@ -26,7 +26,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return savedUser ? JSON.parse(savedUser) : null;
     });
     const [authError, setAuthError] = useState<string | null>(null);
-    const [auditLog, setAuditLog] = useState<{ id: number; user: string; action: string; time: string; type: string }[]>([]);
+    const [auditLog, setAuditLog] = useState<{ id: number; user: string; action: string; time: string; type: string }[]>([
+        { id: 1, user: 'Ali Al-Ahmed', action: 'Approved maintenance request #REQ-88', time: '10 mins ago', type: 'admin' },
+        { id: 2, user: 'System', action: 'Auto-assigned Truck T-401 to Route R-05', time: '25 mins ago', type: 'system' },
+        { id: 3, user: 'Sara Al-Mansoori', action: 'Updated Bin-102 status to "Cleared"', time: '1 hour ago', type: 'manager' },
+        { id: 4, user: 'Omar Farooq', action: 'Generated Monthly Efficiency Report', time: '2 hours ago', type: 'engineer' },
+        { id: 5, user: 'System', action: 'Detected high fill level in Sector 4', time: '3 hours ago', type: 'alert' },
+        { id: 6, user: 'Layla Hassan', action: 'Exported financial logs', time: 'Yesterday', type: 'finance' }
+    ]);
     const [isRoleSelectorOpen, setIsRoleSelectorOpen] = useState(false);
 
     // Hardcoded Credentials for Demo

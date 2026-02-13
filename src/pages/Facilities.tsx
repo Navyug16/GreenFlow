@@ -4,11 +4,15 @@ import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import MapWidget from '../components/MapWidget';
 import type { Facility } from '../types';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const FacilitiesPage = () => {
     const { user } = useAuth();
     const { facilities = [] } = useData();
     const [selectedFacility, setSelectedFacility] = useState<Facility | null>(null);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportDuration, setReportDuration] = useState<'day' | 'week' | 'month'>('day');
 
     // Simulated Metrics State for the Modal
     const [metrics, setMetrics] = useState({
@@ -197,6 +201,145 @@ const FacilitiesPage = () => {
         </div>
     );
 
+    const ReportModal = () => {
+        // Mock calculations based on duration
+        const multiplier = reportDuration === 'day' ? 1 : reportDuration === 'week' ? 7 : 30;
+        const totalProcessed = 2500 * multiplier;
+        const totalEnergy = 850 * multiplier;
+        const totalRevenue = facilities.reduce((acc, f) => acc + f.revenue, 0) * multiplier;
+
+        const downloadReport = () => {
+            const doc = new jsPDF();
+
+            // Title
+            doc.setFontSize(20);
+            doc.setTextColor(40, 40, 40);
+            doc.text("GreenFlow - System Performance Report", 14, 22);
+
+            // Metadata
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+            doc.text(`Duration: ${reportDuration.charAt(0).toUpperCase() + reportDuration.slice(1)}`, 14, 35);
+
+            // Summary Info
+            doc.setDrawColor(200);
+            doc.line(14, 40, 196, 40);
+
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text("System Overview", 14, 50);
+
+            doc.setFontSize(12);
+            doc.setTextColor(60);
+            doc.text(`Total Waste Processed: ${totalProcessed.toLocaleString()} Tons`, 14, 60);
+            doc.text(`Total Energy Generated: ${totalEnergy.toLocaleString()} kW`, 14, 68);
+            doc.text(`Total Revenue: ${totalRevenue.toLocaleString()} SAR`, 14, 76);
+
+            // Table of Facilities
+            const tableData = facilities.map(f => [
+                f.name,
+                f.type.toUpperCase(),
+                f.region,
+                `${Math.round(f.output * multiplier)} ${getUnit(f.type)}`,
+                f.status.toUpperCase()
+            ]);
+
+            autoTable(doc, {
+                startY: 85,
+                head: [['Facility Name', 'Type', 'Region', 'Output', 'Status']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [16, 185, 129] }, // Green
+                styles: { fontSize: 10 }
+            });
+
+            // Footer
+            const pageCount = doc.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text('Confidential - Internal Use Only', 14, doc.internal.pageSize.height - 10);
+            }
+
+            doc.save(`GreenFlow_Report_${reportDuration}_${Date.now()}.pdf`);
+        };
+
+        return (
+            <div style={{
+                position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)',
+                display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999
+            }}>
+                <div style={{
+                    background: '#1e293b', width: '90%', maxWidth: '600px', borderRadius: '16px',
+                    border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+                }}>
+                    <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h2 style={{ margin: 0, fontSize: '1.25rem' }}>System Performance Report</h2>
+                        <button onClick={() => setShowReportModal(false)}><X size={20} color="white" /></button>
+                    </div>
+
+                    <div style={{ padding: '1.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', padding: '0.25rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', width: 'fit-content' }}>
+                            {(['day', 'week', 'month'] as const).map(d => (
+                                <button
+                                    key={d}
+                                    onClick={() => setReportDuration(d)}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '6px',
+                                        border: 'none',
+                                        background: reportDuration === d ? 'var(--accent-admin)' : 'transparent',
+                                        color: reportDuration === d ? '#fff' : 'var(--text-secondary)',
+                                        textTransform: 'capitalize',
+                                        cursor: 'pointer',
+                                        fontWeight: 500
+                                    }}
+                                >
+                                    {d}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Waste Processed</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{totalProcessed.toLocaleString()} <span style={{ fontSize: '0.8rem' }}>Tons</span></div>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Energy Generated</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--status-warning)' }}>{totalEnergy.toLocaleString()} <span style={{ fontSize: '0.8rem' }}>kW</span></div>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', gridColumn: 'span 2' }}>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Total Revenue Generated</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--status-good)' }}>SAR {totalRevenue.toLocaleString()}</div>
+                            </div>
+                        </div>
+
+                        <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)' }}>Facility Breakdown</h4>
+                        <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {facilities.map(f => (
+                                <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '4px' }}>
+                                    <span>{f.name}</span>
+                                    <span>{Math.round(f.output * multiplier)} {getUnit(f.type)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                        <button onClick={() => setShowReportModal(false)} style={{ padding: '0.75rem', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
+                        <button onClick={downloadReport} style={{ padding: '0.75rem 1rem', background: 'var(--status-good)', border: 'none', color: 'white', borderRadius: '6px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <BarChart3 size={18} /> Download PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {/* Facility Map View */}
@@ -231,6 +374,12 @@ const FacilitiesPage = () => {
                     <div>
                         <div style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>System Efficiency</div>
                         <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>94%</div>
+                    </div>
+                </div>
+                <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-panel)', border: '1px solid var(--glass-border)', cursor: 'pointer' }} onClick={() => setShowReportModal(true)}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                        <Activity size={24} />
+                        <span style={{ fontWeight: 600 }}>Generate Report</span>
                     </div>
                 </div>
             </div>
@@ -393,11 +542,13 @@ const FacilitiesPage = () => {
                 })}
             </div>
 
-            {/* Render Modal */}
-            {selectedFacility && (
-                <FacilityModal facility={selectedFacility} onClose={() => setSelectedFacility(null)} />
-            )}
-        </div>
+            {showReportModal && <ReportModal />}
+            {
+                selectedFacility && (
+                    <FacilityModal facility={selectedFacility} onClose={() => setSelectedFacility(null)} />
+                )
+            }
+        </div >
     );
 };
 

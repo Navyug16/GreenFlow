@@ -9,9 +9,10 @@ const Overview = lazy(() => import('./pages/Overview'));
 const Login = lazy(() => import('./pages/Login'));
 const RoutesPage = lazy(() => import('./pages/Routes'));
 const AssetsPage = lazy(() => import('./pages/Assets'));
-const PlaceholderPage = lazy(() => import('./components/PlaceholderPage'));
+
 const FacilitiesPage = lazy(() => import('./pages/Facilities'));
 const IncidentsPage = lazy(() => import('./pages/Incidents'));
+const CCTV = lazy(() => import('./pages/CCTV'));
 const MachineryPage = lazy(() => import('./pages/Machinery'));
 const AdminPage = lazy(() => import('./pages/Admin'));
 const FinancePage = lazy(() => import('./pages/Finance'));
@@ -55,7 +56,7 @@ function App() {
                   <Route path="assets" element={<AssetsPage />} />
                   <Route path="facilities" element={<FacilitiesPage />} />
                   <Route path="incidents" element={<IncidentsPage />} />
-                  <Route path="cctv" element={<PlaceholderPage title="CCTV" />} />
+                  <Route path="cctv" element={<CCTV />} />
                   <Route path="admin-users" element={<AdminPage />} />
                   <Route path="finance" element={<FinancePage />} />
 
