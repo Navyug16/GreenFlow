@@ -130,7 +130,8 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                 plate: 'New',
                 capacity: 'N/A',
                 totalHours: 0,
-                route: newAssetRoute || 'Unassigned'
+                route: newAssetRoute || 'Unassigned',
+                cost: newAssetCost ? parseFloat(newAssetCost) : 0
             });
         } else {
             addBin({
@@ -602,6 +603,27 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                             {requestType === 'Truck' && (
                                 <>
                                     <div style={{ marginBottom: '1rem', animation: 'fadeIn 0.3s' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Purchase Cost (SAR)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <CreditCard size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+                                            <input
+                                                type="number"
+                                                placeholder="e.g. 250000"
+                                                value={requestCost}
+                                                onChange={(e) => setRequestCost(e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '0.75rem 0.75rem 0.75rem 2.5rem',
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    background: 'var(--bg-main)',
+                                                    border: '1px solid var(--glass-border)',
+                                                    color: 'white'
+                                                }}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div style={{ marginBottom: '1rem', animation: 'fadeIn 0.3s' }}>
                                         <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Required Capacity</label>
                                         <div style={{ position: 'relative' }}>
                                             <Gauge size={18} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
@@ -762,24 +784,44 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
                             </div>
 
                             {newAssetType === 'Truck' && (
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Assigned Route</label>
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. Route A"
-                                        value={newAssetRoute}
-                                        onChange={(e) => setNewAssetRoute(e.target.value)}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.75rem',
-                                            borderRadius: 'var(--radius-sm)',
-                                            background: 'var(--bg-main)',
-                                            border: '1px solid var(--glass-border)',
-                                            color: 'white'
-                                        }}
-                                        required
-                                    />
-                                </div>
+                                <>
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Assigned Route</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Route A"
+                                            value={newAssetRoute}
+                                            onChange={(e) => setNewAssetRoute(e.target.value)}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                borderRadius: 'var(--radius-sm)',
+                                                background: 'var(--bg-main)',
+                                                border: '1px solid var(--glass-border)',
+                                                color: 'white'
+                                            }}
+                                            required
+                                        />
+                                    </div>
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Purchase Cost (SAR)</label>
+                                        <input
+                                            type="number"
+                                            placeholder="e.g. 250000"
+                                            value={newAssetCost}
+                                            onChange={(e) => setNewAssetCost(e.target.value)}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                borderRadius: 'var(--radius-sm)',
+                                                background: 'var(--bg-main)',
+                                                border: '1px solid var(--glass-border)',
+                                                color: 'white'
+                                            }}
+                                            required
+                                        />
+                                    </div>
+                                </>
                             )}
 
                             {newAssetType === 'Bin' && (

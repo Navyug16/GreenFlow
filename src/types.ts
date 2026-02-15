@@ -80,6 +80,7 @@ export interface Truck {
   routeId?: string; // Link to Route ID
   route?: string; // Display Name
   currentLoad?: number; // % Full
+  cost?: number; // Purchase Cost
 }
 
 export interface Bin {
@@ -107,6 +108,7 @@ export interface Machine {
   facilityId: string;
   lastMaintenance: string;
   nextDue: string;
+  cost?: number;
 }
 
 export interface Request {

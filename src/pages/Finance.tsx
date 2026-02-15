@@ -9,12 +9,19 @@ import {
     Wrench,
     PieChart,
     ArrowUpRight,
-    ArrowDownRight
+    ArrowDownRight,
+    CreditCard
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
 const FinancePage = () => {
-    const { facilities, routes, requests, incidents } = useData();
+    const { facilities, routes, requests, incidents, trucks, bins, machinery } = useData();
+
+    // Asset Valuation
+    const totalAssetValue =
+        trucks.reduce((acc, t) => acc + (t.cost || 0), 0) +
+        bins.reduce((acc, b) => acc + (b.cost || 0), 0) +
+        machinery.reduce((acc, m) => acc + (m.cost || 0), 0);
 
     // Calculations
     const dailyRevenue = facilities.reduce((acc, f) => acc + f.revenue, 0);
@@ -123,6 +130,22 @@ const FinancePage = () => {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>
                         <Zap size={14} /> System Health: Good
+                    </div>
+                </div>
+
+
+                <div className="card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                        <div>
+                            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', fontWeight: 500 }}>Asset Portfolio</p>
+                            <h2 style={{ fontSize: '1.75rem', margin: '0.25rem 0', color: 'var(--accent-finance)' }}>{formatCurrency(totalAssetValue)}</h2>
+                        </div>
+                        <div style={{ padding: '0.5rem', background: 'rgba(124, 58, 237, 0.1)', borderRadius: '8px', color: 'var(--accent-finance)' }}>
+                            <CreditCard size={20} />
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>
+                        <Truck size={14} /> {trucks.length} Trucks • <Zap size={14} /> {bins.length} Bins
                     </div>
                 </div>
             </div>
@@ -337,7 +360,7 @@ const FinancePage = () => {
                     </table>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

@@ -242,7 +242,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         if (db) {
             try {
                 await setDoc(doc(db, 'trucks', truck.id), truck);
-                if (truck.route && truck.route !== 'Unassigned') {
+                if (truck.route) {
                     const routeId = `R-${Date.now()}`;
                     const newRoute: Route = {
                         id: routeId,
@@ -473,9 +473,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         const request = requests.find(r => r.id === id);
         if (!request) return;
         if (request.type === 'Truck') {
+            const newCode = `T-${Math.floor(Math.random() * 1000)}`;
             const newTruck: Truck = {
                 id: `T-${Date.now()}`,
-                code: `T-${Math.floor(Math.random() * 1000)}`,
+                code: newCode,
                 type: 'Compactor',
                 status: 'active',
                 health: 100,
@@ -484,7 +485,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
                 mileage: 0,
                 lastService: new Date().toISOString().split('T')[0],
                 capacity: request.capacity || 'N/A',
-                route: request.route || 'Unassigned'
+                route: request.route || `Route ${newCode}`,
+                cost: request.cost || 0
             };
             await addTruck(newTruck);
         } else if (request.type === 'Bin') {

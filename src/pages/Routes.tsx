@@ -6,6 +6,7 @@ import { Fuel, Navigation, RefreshCw, AlertTriangle, Layers } from 'lucide-react
 import { FACILITIES } from '../data/mockData';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import { clusterBinsByTruck, optimizeStopSequence } from '../utils/routeOptimizer';
 
 // High-quality Truck Icon
 const truckIcon = new DivIcon({
@@ -54,14 +55,18 @@ const fullTruckIcon = new DivIcon({
 // Helper to auto-zoom to selected route
 const MapRecenter = ({ selectedRoute, routes }: { selectedRoute: string | null, routes: any[] }) => {
     const map = useMap();
+    const lastRouteRef = useRef<string | null>(null);
 
     useEffect(() => {
-        if (selectedRoute) {
+        if (selectedRoute && selectedRoute !== lastRouteRef.current) {
             const route = routes.find(r => r.id === selectedRoute);
             if (route && route.currentPath && route.currentPath.length > 0) {
                 const bounds = L.latLngBounds(route.currentPath);
                 map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+                lastRouteRef.current = selectedRoute;
             }
+        } else if (!selectedRoute) {
+            lastRouteRef.current = null;
         }
     }, [selectedRoute, routes, map]);
 
@@ -92,7 +97,7 @@ const getFacilityIcon = (type: string) => new DivIcon({
 
 const RoutesPage = () => {
     const { bins, routes: contextRoutes, trucks: contextTrucks, updateBin, addTruck } = useData();
-    const [displayRoutes, setDisplayRoutes] = useState<any[]>([]);
+    const [displayRoutes, setDisplayRoutes] = useState<any[]>(contextRoutes);
     const [simulatedBins, setSimulatedBins] = useState(() =>
         bins.map(b => ({
             ...b,
@@ -115,12 +120,22 @@ const RoutesPage = () => {
     const truckPositionsRef = useRef<Record<string, [number, number]>>({});
     const lastOptimizationRef = useRef<number>(0);
 
-    // Initial load check
+    // Truck Route Hash: routeId -> string (binIds joined)
+    const routeBinsHashRef = useRef<Record<string, string>>({});
+
+    // Initial load check & Sync displayRoutes when context changes
     useEffect(() => {
-        if (contextRoutes.length > 0 && displayRoutes.length === 0) {
+        if (contextRoutes.length > 0) {
+            setDisplayRoutes(prev => {
+                if (prev.length === 0) return contextRoutes;
+                return prev;
+            });
+
             // Initialize positions
             contextRoutes.forEach(r => {
-                truckPositionsRef.current[r.id] = r.region?.includes('North') ? [24.95, 46.70] : [24.75, 46.72];
+                if (!truckPositionsRef.current[r.id]) {
+                    truckPositionsRef.current[r.id] = r.region?.includes('North') ? [24.95, 46.70] : [24.75, 46.72];
+                }
             });
         }
     }, [contextRoutes]);
@@ -144,8 +159,8 @@ const RoutesPage = () => {
      */
     const optimizeRoutes = async (currentBins: any[], currentMsg: string | null) => {
         const now = Date.now();
-        // Throttle: Only optimize every 10 seconds or if forced
-        if (now - lastOptimizationRef.current < 10000 && !currentMsg?.includes('Emergency')) return;
+        // Throttle: Only optimize every 5 seconds or if forced
+        if (now - lastOptimizationRef.current < 5000 && !currentMsg?.includes('Emergency')) return;
         lastOptimizationRef.current = now;
 
         // 1. Identify Critical Bins
@@ -182,67 +197,85 @@ const RoutesPage = () => {
             return; // Context update will trigger re-run
         }
 
-        // 3. Assign Bins to Trucks
-        const allRoutes = [...contextRoutes];
+        // 3. Assign Bins to Trucks (Clustering)
+        const clusters = clusterBinsByTruck(contextRoutes, currentBins);
 
-        // Clone Bins to track assignment
-        let unassignedBins = [...currentBins].filter((b: any) => b.fillLevel > 30);
-        unassignedBins.sort((a: any, b: any) => b.fillLevel - a.fillLevel);
+        const newDisplayRoutes = [];
 
-        const newDisplayRoutes = await Promise.all(allRoutes.map(async (route) => {
+        // Process sequentially to be gentle on OSRM (Public API rate limits)
+        for (const route of contextRoutes) {
             const currentPos = truckPositionsRef.current[route.id] ||
                 (route.region?.includes('North') ? [24.95, 46.70] : [24.75, 46.72]);
 
-            // Assign closest high-priority bins to this truck
-            const capacity = 4;
-            const myBins: any[] = [];
-            let truckLoc = { lat: currentPos[0], lng: currentPos[1] };
-
-            for (let i = 0; i < capacity; i++) {
-                if (unassignedBins.length === 0) break;
-
-                let closestIdx = -1;
-                let minDst = Infinity;
-
-                unassignedBins.forEach((b: any, idx: number) => {
-                    const dist = Math.sqrt(Math.pow(b.lat - truckLoc.lat, 2) + Math.pow(b.lng - truckLoc.lng, 2));
-                    const score = dist - (b.fillLevel > 90 ? 0.05 : 0);
-                    if (score < minDst) {
-                        minDst = score;
-                        closestIdx = idx;
-                    }
-                });
-
-                if (closestIdx !== -1) {
-                    const chosen = unassignedBins[closestIdx];
-                    myBins.push(chosen);
-                    truckLoc = { lat: chosen.lat, lng: chosen.lng };
-                    unassignedBins.splice(closestIdx, 1);
+            // Find Nearest Facility Dynamically (Universal Endpoint)
+            let nearestFacility = FACILITIES[0];
+            let minFacDist = Infinity;
+            FACILITIES.forEach(f => {
+                const d = Math.sqrt(Math.pow(f.lat! - currentPos[0], 2) + Math.pow(f.lng! - currentPos[1], 2));
+                if (d < minFacDist) {
+                    minFacDist = d;
+                    nearestFacility = f;
                 }
+            });
+            const facilityLoc = [nearestFacility.lat || 24.75, nearestFacility.lng || 46.72] as [number, number];
+
+            // Determine Stops
+            let assignedBins = clusters[route.id] || [];
+
+            // If Full, override assignments -> Go directly to facility
+            // If No Bins, also effectively go to facility (patrol/return base)
+            const isFull = (truckLoads[route.id] || 0) >= 99;
+            if (isFull) {
+                assignedBins = [];
             }
 
-            // Facility Location
-            let facility = [24.75, 46.72];
-            if (route.region?.includes('North')) facility = [24.83, 46.63];
-            if (route.region?.includes('South')) facility = [24.52, 46.72];
+            // Check if we need to update the path
+            // Update if: 
+            // 1. Assignments changed
+            // 2. OR Current path is 'mock' (too short)
+            const binIdsHash = isFull ? 'RETURNING_TO_BASE' : assignedBins.map((b: any) => b.id).sort().join(',');
+            const hasChanged = routeBinsHashRef.current[route.id] !== binIdsHash;
+            const isMockPath = !route.currentPath || route.currentPath.length < 10;
 
+            if (!hasChanged && !isMockPath) {
+                newDisplayRoutes.push(route);
+                continue;
+            }
+
+            routeBinsHashRef.current[route.id] = binIdsHash;
+
+            // Optimize Sequence (TSP)
+            // If assignedBins is empty, this returns [], resulting in [Current -> Facility] path
+            const optimizedStops = optimizeStopSequence(
+                currentPos as [number, number],
+                facilityLoc,
+                assignedBins
+            );
+
+            // Construct Waypoints
             const waypoints: [number, number][] = [];
             waypoints.push(currentPos as [number, number]);
-            myBins.forEach((b: any) => waypoints.push([b.lat, b.lng]));
-            waypoints.push(facility as [number, number]);
+            optimizedStops.forEach((b: any) => waypoints.push([b.lat, b.lng]));
+            waypoints.push(facilityLoc);
 
-            if (myBins.length === 0) {
-                return { ...route, assignedBinIds: [], currentPath: route.currentPath || [] };
+            // Fetch Route with delay
+            let path = null;
+            try {
+                // Determine if we should query OSRM
+                // Respect rate limit: pause 400ms between calls
+                await new Promise(r => setTimeout(r, 400));
+                path = await fetchRouteGeometry(waypoints);
+            } catch (err) {
+                console.warn("Route fetch failed for", route.id);
             }
 
-            const path = await fetchRouteGeometry(waypoints);
-
-            return {
+            // If fetch failed, keep old path (even if mock) to avoid disappearing
+            newDisplayRoutes.push({
                 ...route,
-                assignedBinIds: myBins.map((b: any) => b.id),
-                currentPath: path || []
-            };
-        }));
+                assignedBinIds: optimizedStops.map((b: any) => b.id),
+                currentPath: path || route.currentPath || []
+            });
+        }
 
         setDisplayRoutes(newDisplayRoutes);
         startTimeRef.current = performance.now();

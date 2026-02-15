@@ -1,4 +1,4 @@
-import type { User, KpiStat, Incident, Facility, Bin, Machine, Truck } from '../types';
+import type { User, KpiStat, Incident, Facility, Bin, Machine, Truck, Request, Route } from '../types';
 
 export const CURRENT_USER: User = {
     id: 'u1',
@@ -167,15 +167,15 @@ export const BINS: Bin[] = [
     { id: 'B-03', lat: 24.6655, lng: 46.7255, fillLevel: 30, status: 'active', health: 90, region: 'Central Riyadh', overflowStatus: false, lastCollection: '1 day ago', location: 'Al Malaz Park', cost: 900, routeId: 'T2' },
 
     // T-03: Second Industrial City
-    { id: 'B-04', lat: 24.5950, lng: 46.8050, fillLevel: 85, status: 'warning', health: 80, region: 'South Riyadh', overflowStatus: false, lastCollection: '6 hours ago', location: 'Second Industrial Gate', cost: 1500, routeId: 'T3' },
+    { id: 'B-04', lat: 24.5950, lng: 46.8050, fillLevel: 15, status: 'active', health: 80, region: 'South Riyadh', overflowStatus: false, lastCollection: '6 hours ago', location: 'Second Industrial Gate', cost: 1500, routeId: 'T3' },
 
     // T-04: King Khalid Airport
     { id: 'B-05', lat: 24.9505, lng: 46.7005, fillLevel: 25, status: 'active', health: 98, region: 'North Riyadh', overflowStatus: false, lastCollection: '30 mins ago', location: 'Airport Terminal 5', cost: 2000, routeId: 'T4' },
     { id: 'B-15', lat: 24.9600, lng: 46.7100, fillLevel: 40, status: 'active', health: 95, region: 'North Riyadh', overflowStatus: false, lastCollection: '1 hour ago', location: 'Airport Cargo Area', cost: 1900, routeId: 'T4' },
 
     // T-05: Riyadh Park Mall
-    { id: 'B-06', lat: 24.7550, lng: 46.6300, fillLevel: 75, status: 'active', health: 88, region: 'North Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'Riyadh Park Mall', cost: 1800, routeId: 'T5' },
-    { id: 'B-11', lat: 24.7600, lng: 46.6350, fillLevel: 60, status: 'active', health: 92, region: 'North Riyadh', overflowStatus: false, lastCollection: '2 hours ago', location: 'Riyadh Park North', cost: 1700, routeId: 'T5' },
+    { id: 'B-06', lat: 24.7550, lng: 46.6300, fillLevel: 20, status: 'active', health: 88, region: 'North Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'Riyadh Park Mall', cost: 1800, routeId: 'T5' },
+    { id: 'B-11', lat: 24.7600, lng: 46.6350, fillLevel: 30, status: 'active', health: 92, region: 'North Riyadh', overflowStatus: false, lastCollection: '2 hours ago', location: 'Riyadh Park North', cost: 1700, routeId: 'T5' },
     { id: 'B-12', lat: 24.7500, lng: 46.6250, fillLevel: 50, status: 'active', health: 94, region: 'North Riyadh', overflowStatus: false, lastCollection: '3 hours ago', location: 'Riyadh Park West', cost: 1750, routeId: 'T5' },
 
     // T-06: Al Nahda / Granada
@@ -183,35 +183,31 @@ export const BINS: Bin[] = [
     { id: 'B-13', lat: 24.7900, lng: 46.7450, fillLevel: 45, status: 'active', health: 90, region: 'East Riyadh', overflowStatus: false, lastCollection: '4 hours ago', location: 'Granada Business Park', cost: 1450, routeId: 'T6' },
 
     // T-07: Ministry of Interior
-    { id: 'B-08', lat: 24.6805, lng: 46.6205, fillLevel: 55, status: 'active', health: 96, region: 'Central Riyadh', overflowStatus: false, lastCollection: '4 hours ago', location: 'Ministry of Interior', cost: 1300, routeId: 'T7' },
-    { id: 'B-14', lat: 24.6850, lng: 46.6250, fillLevel: 65, status: 'active', health: 93, region: 'Central Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'Ministry Housing', cost: 1350, routeId: 'T7' }
+    { id: 'B-08', lat: 24.6805, lng: 46.6205, fillLevel: 25, status: 'active', health: 96, region: 'Central Riyadh', overflowStatus: false, lastCollection: '4 hours ago', location: 'Ministry of Interior', cost: 1300, routeId: 'T7' },
+    { id: 'B-14', lat: 24.6850, lng: 46.6250, fillLevel: 35, status: 'active', health: 93, region: 'Central Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'Ministry Housing', cost: 1350, routeId: 'T7' }
 ];
 
 export const MACHINERY: Machine[] = [
-    { id: 'M1', name: 'Conveyor Belt C-2', status: 'operational', health: 92, region: 'Central Riyadh', facilityId: 'F1', lastMaintenance: '2d ago', nextDue: '2 weeks', type: 'Conveyor' },
-    { id: 'M2', name: 'Waste Compactor A', status: 'maintenance', health: 45, region: 'South Riyadh', facilityId: 'F2', lastMaintenance: 'Now', nextDue: 'Overdue', type: 'Compactor' },
-    { id: 'M3', name: 'Sorting Arm R-5', status: 'operational', health: 88, region: 'Central Riyadh', facilityId: 'F1', lastMaintenance: '5d ago', nextDue: '3 weeks', type: 'Sorting Arm' },
-    { id: 'M4', name: 'Shredder Unit S-1', status: 'warning', health: 76, region: 'North Riyadh', facilityId: 'F3', lastMaintenance: '1w ago', nextDue: '1 week', type: 'Shredder' },
-    { id: 'M5', name: 'Hydraulic Press HP-2', status: 'repair', health: 30, region: 'South Riyadh', facilityId: 'F2', lastMaintenance: 'Yesterday', nextDue: 'Now', type: 'Hydraulic Press' },
+    { id: 'M1', name: 'Conveyor Belt C-2', status: 'operational', health: 92, region: 'Central Riyadh', facilityId: 'F1', lastMaintenance: '2d ago', nextDue: '2 weeks', type: 'Conveyor', cost: 150000 },
+    { id: 'M2', name: 'Waste Compactor A', status: 'maintenance', health: 45, region: 'South Riyadh', facilityId: 'F2', lastMaintenance: 'Now', nextDue: 'Overdue', type: 'Compactor', cost: 280000 },
+    { id: 'M3', name: 'Sorting Arm R-5', status: 'operational', health: 88, region: 'Central Riyadh', facilityId: 'F1', lastMaintenance: '5d ago', nextDue: '3 weeks', type: 'Sorting Arm', cost: 450000 },
+    { id: 'M4', name: 'Shredder Unit S-1', status: 'warning', health: 76, region: 'North Riyadh', facilityId: 'F3', lastMaintenance: '1w ago', nextDue: '1 week', type: 'Shredder', cost: 320000 },
+    { id: 'M5', name: 'Hydraulic Press HP-2', status: 'repair', health: 30, region: 'South Riyadh', facilityId: 'F2', lastMaintenance: 'Yesterday', nextDue: 'Now', type: 'Hydraulic Press', cost: 210000 },
 ];
 
-export const REQUESTS = [
-    { id: 'req1', type: 'Truck', notes: 'Need additional compactor for Sector 7', status: 'pending', date: '2026-02-04', requester: 'West Manager', details: 'High volume expected next month' },
-    { id: 'req2', type: 'Bin', notes: 'Replacement for damaged bin B-04', status: 'approved', date: '2026-02-03', requester: 'Maintenance Team', details: 'Sensor malfunction' },
-    { id: 'req3', type: 'Bin', notes: 'New bin request for Diplomatic Quarter ext', status: 'pending', date: '2026-02-05', requester: 'City Planning', details: 'New park opening' },
-];
+export const REQUESTS: Request[] = [];
 
 export const TRUCKS: Truck[] = [
-    { id: '1', code: 'T-01', plate: 'T-01', driver: 'Mohammed Al-Salem', type: 'Compactor', route: 'Olaya Corridor', routeId: 'T1', status: 'active', health: 95, region: 'Central Riyadh', fuel: 72, mileage: 12500, lastService: '2026-01-10', capacity: '15 Tons', totalHours: 4200 },
-    { id: '2', code: 'T-02', plate: 'T-02', driver: 'Ajay Kumar', type: 'Pickup', route: 'Al Malaz Park Area', routeId: 'T2', status: 'active', health: 88, region: 'Central Riyadh', fuel: 65, mileage: 8100, lastService: '2026-01-15', capacity: '5 Tons', totalHours: 2100 },
-    { id: '3', code: 'T-03', plate: 'T-03', driver: 'Faisal Al-Harbi', type: 'Medium Compactor', route: 'Second Industrial City', routeId: 'T3', status: 'maintenance', health: 45, region: 'South Riyadh', fuel: 10, mileage: 14200, lastService: '2025-12-20', capacity: '10 Tons', totalHours: 3800 },
-    { id: '4', code: 'T-04', plate: 'T-04', driver: 'Ahmed Hassan', type: 'Pickup', route: 'King Khalid Airport', routeId: 'T4', status: 'active', health: 92, region: 'North Riyadh', fuel: 88, mileage: 5600, lastService: '2026-01-25', capacity: '5 Tons', totalHours: 1500 },
-    { id: '5', code: 'T-05', plate: 'T-05', driver: 'Abdul Rehman', type: 'Large Compactor', route: 'Riyadh Park Mall', routeId: 'T5', status: 'active', health: 78, region: 'North Riyadh', fuel: 45, mileage: 18900, lastService: '2026-01-05', capacity: '20 Tons', totalHours: 5600 },
-    { id: '6', code: 'T-06', plate: 'T-06', driver: 'Salman Khan', type: 'Hook Loader', route: 'Al Nahda District', routeId: 'T6', status: 'active', health: 85, region: 'East Riyadh', fuel: 55, mileage: 9800, lastService: '2026-01-18', capacity: '12 Tons', totalHours: 3100 },
-    { id: '7', code: 'T-07', plate: 'T-07', driver: 'Farukh Saikh', type: 'Pickup', route: 'Ministry of Interior HQ', routeId: 'T7', status: 'active', health: 96, region: 'Central Riyadh', fuel: 80, mileage: 6700, lastService: '2026-01-22', capacity: '5 Tons', totalHours: 1900 },
+    { id: '1', code: 'T-01', plate: 'T-01', driver: 'Mohammed Al-Salem', type: 'Compactor', route: 'Olaya Corridor', routeId: 'T1', status: 'active', health: 95, region: 'Central Riyadh', fuel: 72, mileage: 12500, lastService: '2026-01-10', capacity: '15 Tons', totalHours: 4200, cost: 350000 },
+    { id: '2', code: 'T-02', plate: 'T-02', driver: 'Ajay Kumar', type: 'Pickup', route: 'Al Malaz Park Area', routeId: 'T2', status: 'active', health: 88, region: 'Central Riyadh', fuel: 65, mileage: 8100, lastService: '2026-01-15', capacity: '5 Tons', totalHours: 2100, cost: 180000 },
+    { id: '3', code: 'T-03', plate: 'T-03', driver: 'Faisal Al-Harbi', type: 'Medium Compactor', route: 'Second Industrial City', routeId: 'T3', status: 'maintenance', health: 45, region: 'South Riyadh', fuel: 10, mileage: 14200, lastService: '2025-12-20', capacity: '10 Tons', totalHours: 3800, cost: 280000 },
+    { id: '4', code: 'T-04', plate: 'T-04', driver: 'Ahmed Hassan', type: 'Pickup', route: 'King Khalid Airport', routeId: 'T4', status: 'active', health: 92, region: 'North Riyadh', fuel: 88, mileage: 5600, lastService: '2026-01-25', capacity: '5 Tons', totalHours: 1500, cost: 190000 },
+    { id: '5', code: 'T-05', plate: 'T-05', driver: 'Abdul Rehman', type: 'Large Compactor', route: 'Riyadh Park Mall', routeId: 'T5', status: 'active', health: 78, region: 'North Riyadh', fuel: 45, mileage: 18900, lastService: '2026-01-05', capacity: '20 Tons', totalHours: 5600, cost: 420000 },
+    { id: '6', code: 'T-06', plate: 'T-06', driver: 'Salman Khan', type: 'Hook Loader', route: 'Al Nahda District', routeId: 'T6', status: 'active', health: 85, region: 'East Riyadh', fuel: 55, mileage: 9800, lastService: '2026-01-18', capacity: '12 Tons', totalHours: 3100, cost: 310000 },
+    { id: '7', code: 'T-07', plate: 'T-07', driver: 'Farukh Saikh', type: 'Pickup', route: 'Ministry of Interior HQ', routeId: 'T7', status: 'active', health: 96, region: 'Central Riyadh', fuel: 80, mileage: 6700, lastService: '2026-01-22', capacity: '5 Tons', totalHours: 1900, cost: 185000 },
 ];
 
-export const TRUCK_ROUTES = [
+export const TRUCK_ROUTES: Route[] = [
     {
         id: 'T1',
         name: 'Olaya Corridor',
