@@ -53,7 +53,7 @@ function App() {
 
                   {/* Admin Routes */}
                   <Route path="routes" element={<RoutesPage />} />
-                  <Route path="assets" element={<AssetsPage />} />
+                  <Route path="fleet" element={<AssetsPage />} />
                   <Route path="facilities" element={<FacilitiesPage />} />
                   <Route path="incidents" element={<IncidentsPage />} />
                   <Route path="cctv" element={<CCTV />} />

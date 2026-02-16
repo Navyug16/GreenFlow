@@ -24,7 +24,7 @@ const Sidebar = ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                 return [
                     { icon: LayoutDashboard, label: 'Overview', path: '/' },
                     { icon: Map, label: 'Routes', path: '/routes' },
-                    { icon: Truck, label: 'Assets', path: '/assets' },
+                    { icon: Truck, label: 'Fleet', path: '/fleet' },
                     { icon: Factory, label: 'Facilities', path: '/facilities' },
                     { icon: PieChart, label: 'Finance', path: '/finance' },
                     { icon: AlertTriangle, label: 'Incidents', path: '/incidents' },
@@ -35,7 +35,7 @@ const Sidebar = ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                 return [
                     { icon: LayoutDashboard, label: 'Overview', path: '/' },
                     { icon: Map, label: 'Routes', path: '/routes' },
-                    { icon: Truck, label: 'Assets', path: '/assets' },
+                    { icon: Truck, label: 'Fleet', path: '/fleet' },
                     { icon: Factory, label: 'Facilities', path: '/facilities' },
                     { icon: PieChart, label: 'Finance', path: '/finance' },
                 ];
@@ -51,7 +51,7 @@ const Sidebar = ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                     { icon: LayoutDashboard, label: 'Overview', path: '/' },
                     { icon: PieChart, label: 'Finance', path: '/finance' },
                     { icon: Map, label: 'Routes', path: '/routes' },
-                    { icon: Truck, label: 'Assets', path: '/assets' },
+                    { icon: Truck, label: 'Fleet', path: '/fleet' },
                     { icon: Factory, label: 'Facilities', path: '/facilities' },
                 ];
             default:
