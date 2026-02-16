@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import L, { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Fuel, Navigation, RefreshCw, AlertTriangle, Layers } from 'lucide-react';
+import { Fuel, Navigation, RefreshCw, AlertTriangle, Layers, X, Activity } from 'lucide-react';
 import { FACILITIES } from '../data/mockData';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -109,6 +109,7 @@ const RoutesPage = () => {
     const [progress, setProgress] = useState(0);
     const [activeNotification, setActiveNotification] = useState<string | null>(null);
     const [mapStyle, setMapStyle] = useState<'dark' | 'light'>('dark');
+    const [showStats, setShowStats] = useState(() => window.innerWidth > 768);
 
     // Truck Load State: routeId -> load %
     const [truckLoads, setTruckLoads] = useState<Record<string, number>>({});
@@ -352,6 +353,8 @@ const RoutesPage = () => {
                     // Sync Critical Status
                     if (newFill > 95 && bin.fillLevel <= 95) {
                         updateBin(bin.id, { overflowStatus: true, status: 'critical', fillLevel: 96 });
+                        setActiveNotification(`⚠️ Critical: Bin ${bin.id} is Full!`);
+                        setTimeout(() => setActiveNotification(null), 4000);
                     }
 
                     return { ...bin, fillLevel: newFill };
@@ -406,10 +409,11 @@ const RoutesPage = () => {
                                         updateBin(bin.id, { fillLevel: 0, status: 'active', overflowStatus: false, lastCollection: 'Just now' });
                                     }
 
-                                    if (!activeNotification) {
+                                    // Removed collection notification per user request
+                                    /* if (!activeNotification) {
                                         setActiveNotification(`${route.name} collecting from Bin ${bin.id}`);
                                         setTimeout(() => setActiveNotification(null), 2000);
-                                    }
+                                    } */
 
                                 }
                             }
@@ -452,75 +456,96 @@ const RoutesPage = () => {
     return (
         <div style={{ position: 'relative', height: 'calc(100vh - 100px)', borderRadius: '16px', overflow: 'hidden', boxShadow: 'var(--shadow-lg)' }}>
 
+            {/* Toggle Stats Button (Mobile/Collapsed View) */}
+            {!showStats && (
+                <div
+                    onClick={() => setShowStats(true)}
+                    style={{
+                        position: 'absolute', top: '20px', left: '20px', zIndex: 1000,
+                        background: 'rgba(30, 41, 59, 0.9)', backdropFilter: 'blur(12px)',
+                        borderRadius: '12px', padding: '0.75rem', color: 'white',
+                        cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: 'var(--shadow-lg)'
+                    }}
+                >
+                    <Activity size={24} />
+                </div>
+            )}
+
             {/* Stats Overlay */}
-            <div style={{
-                position: 'absolute', top: '20px', left: '20px', width: '320px', zIndex: 1000,
-                background: 'rgba(30, 41, 59, 0.9)', backdropFilter: 'blur(12px)', borderRadius: '16px',
-                border: '1px solid rgba(255,255,255,0.1)', padding: '1.5rem', color: 'white'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                    <div style={{ padding: '0.75rem', background: 'var(--accent-admin)', borderRadius: '12px' }}>
-                        <Navigation size={24} color="white" />
+            {showStats && (
+                <div style={{
+                    position: 'absolute', top: '20px', left: '20px', width: '320px', zIndex: 1000,
+                    background: 'rgba(30, 41, 59, 0.9)', backdropFilter: 'blur(12px)', borderRadius: '16px',
+                    border: '1px solid rgba(255,255,255,0.1)', padding: '1.5rem', color: 'white'
+                }}>
+                    <div style={{ position: 'absolute', top: '10px', right: '10px', cursor: 'pointer' }} onClick={() => setShowStats(false)}>
+                        <X size={20} style={{ opacity: 0.7 }} />
                     </div>
-                    <div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Live Operations</h2>
-                        <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.7 }}>Real-time Fleet Tracking</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                        <div style={{ padding: '0.75rem', background: 'var(--accent-admin)', borderRadius: '12px' }}>
+                            <Navigation size={24} color="white" />
+                        </div>
+                        <div>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Live Operations</h2>
+                            <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.7 }}>Real-time Fleet Tracking</p>
+                        </div>
                     </div>
-                </div>
 
-                {/* Stats Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '12px', textAlign: 'center' }}>
-                        <Fuel size={16} style={{ opacity: 0.7, marginBottom: '0.25rem' }} />
-                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#10B981' }}>14%</div>
-                        <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Fuel Saved</div>
+                    {/* Stats Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '12px', textAlign: 'center' }}>
+                            <Fuel size={16} style={{ opacity: 0.7, marginBottom: '0.25rem' }} />
+                            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#10B981' }}>14%</div>
+                            <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Fuel Saved</div>
+                        </div>
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '12px', textAlign: 'center' }}>
+                            <RefreshCw size={16} style={{ opacity: 0.7, marginBottom: '0.25rem' }} />
+                            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#3B82F6' }}>850</div>
+                            <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Tons Collected</div>
+                        </div>
                     </div>
-                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '12px', textAlign: 'center' }}>
-                        <RefreshCw size={16} style={{ opacity: 0.7, marginBottom: '0.25rem' }} />
-                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#3B82F6' }}>850</div>
-                        <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>Tons Collected</div>
-                    </div>
-                </div>
 
-                {/* Truck List */}
-                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                    {displayRoutes.map(r => {
-                        const load = truckLoads[r.id] || 0;
-                        const isFull = load >= 99;
-                        return (
-                            <div key={r.id}
-                                onClick={() => setSelectedRoute(r.id === selectedRoute ? null : r.id)}
-                                style={{
-                                    padding: '0.75rem', marginBottom: '0.5rem', borderRadius: '10px',
-                                    background: selectedRoute === r.id ? 'var(--accent-admin)' : 'rgba(255,255,255,0.05)',
-                                    cursor: 'pointer', border: isFull ? '1px solid #EF4444' : '1px solid rgba(255,255,255,0.1)'
-                                }}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                                    <span style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        {r.name}
-                                        {isFull && <AlertTriangle size={14} color="#EF4444" />}
-                                    </span>
-                                    <span style={{ fontSize: '0.8rem', opacity: 0.8, color: isFull ? '#EF4444' : 'inherit' }}>
-                                        {isFull ? 'Returning to Base' : `${Math.round(load)}% Load`}
-                                    </span>
+                    {/* Truck List */}
+                    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                        {displayRoutes.map(r => {
+                            const load = truckLoads[r.id] || 0;
+                            const isFull = load >= 99;
+                            return (
+                                <div key={r.id}
+                                    onClick={() => setSelectedRoute(r.id === selectedRoute ? null : r.id)}
+                                    style={{
+                                        padding: '0.75rem', marginBottom: '0.5rem', borderRadius: '10px',
+                                        background: selectedRoute === r.id ? 'var(--accent-admin)' : 'rgba(255,255,255,0.05)',
+                                        cursor: 'pointer', border: isFull ? '1px solid #EF4444' : '1px solid rgba(255,255,255,0.1)'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                        <span style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {r.name}
+                                            {isFull && <AlertTriangle size={14} color="#EF4444" />}
+                                        </span>
+                                        <span style={{ fontSize: '0.8rem', opacity: 0.8, color: isFull ? '#EF4444' : 'inherit' }}>
+                                            {isFull ? 'Returning to Base' : `${Math.round(load)}% Load`}
+                                        </span>
+                                    </div>
+                                    {/* Load Bar */}
+                                    <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
+                                        <div style={{
+                                            width: `${load}%`, height: '100%', borderRadius: '2px',
+                                            background: load > 90 ? '#EF4444' : '#10B981',
+                                            transition: 'width 0.5s'
+                                        }}></div>
+                                    </div>
+                                    <div style={{ fontSize: '0.7rem', marginTop: '0.25rem', opacity: 0.6 }}>
+                                        {r.assignedBinIds?.length || 0} Bins • {r.driver}
+                                    </div>
                                 </div>
-                                {/* Load Bar */}
-                                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
-                                    <div style={{
-                                        width: `${load}%`, height: '100%', borderRadius: '2px',
-                                        background: load > 90 ? '#EF4444' : '#10B981',
-                                        transition: 'width 0.5s'
-                                    }}></div>
-                                </div>
-                                <div style={{ fontSize: '0.7rem', marginTop: '0.25rem', opacity: 0.6 }}>
-                                    {r.assignedBinIds?.length || 0} Bins • {r.driver}
-                                </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Notification */}
             {activeNotification && (
