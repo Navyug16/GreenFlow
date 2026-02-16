@@ -9,7 +9,7 @@ export const CURRENT_USER: User = {
 
 export const ADMIN_STATS: KpiStat[] = [
     { label: 'Total Revenue', value: '4.2M', unit: 'SAR', change: 12, icon: 'DollarSign', color: 'var(--accent-finance)' },
-    { label: 'Active Trucks', value: 6, change: 2, icon: 'Truck', color: 'var(--accent-admin)' }, // Updated from CSV count
+    { label: 'Active Trucks', value: 8, change: 2, icon: 'Truck', color: 'var(--accent-admin)' }, // Updated from CSV count
     { label: 'Total Bins', value: '18', change: 5, icon: 'Trash2', color: 'var(--text-secondary)' }, // Updated from CSV count
     { label: 'Total Drivers', value: 7, change: 1, icon: 'Users', color: 'var(--text-primary)' },
     { label: 'Avg Bin Fill', value: 68, unit: '%', change: -4, icon: 'BarChart3', color: 'var(--accent-manager)' },
@@ -206,12 +206,13 @@ export const REQUESTS: Request[] = [];
 export const TRUCKS: Truck[] = [
     { id: '1', code: 'T-01', plate: 'T-01', driver: 'Mohammed Al-Salem', type: 'Compactor', route: 'Olaya Corridor', routeId: 'T1', status: 'active', health: 95, region: 'Central Riyadh', fuel: 72, mileage: 12500, lastService: '2026-01-10', capacity: '15 Tons', totalHours: 4200, cost: 350000 },
     { id: '2', code: 'T-02', plate: 'T-02', driver: 'Ajay Kumar', type: 'Pickup', route: 'Al Malaz Park Area', routeId: 'T2', status: 'active', health: 88, region: 'Central Riyadh', fuel: 65, mileage: 8100, lastService: '2026-01-15', capacity: '5 Tons', totalHours: 2100, cost: 180000 },
-    // Removed T-03 (Maintenance)
+    { id: '3', code: 'T-03', plate: 'T-03', driver: 'Fahad Al-Otaibi', type: 'Medium Compactor', route: 'Second Industrial City', routeId: 'T3', status: 'maintenance', health: 45, region: 'South Riyadh', fuel: 10, mileage: 14200, lastService: '2025-12-20', capacity: '10 Tons', totalHours: 3500, cost: 280000 },
     { id: '4', code: 'T-04', plate: 'T-04', driver: 'Ahmed Hassan', type: 'Pickup', route: 'King Khalid Airport', routeId: 'T4', status: 'active', health: 92, region: 'North Riyadh', fuel: 88, mileage: 5600, lastService: '2026-01-25', capacity: '5 Tons', totalHours: 1500, cost: 190000 },
     { id: '5', code: 'T-05', plate: 'T-05', driver: 'Abdul Rehman', type: 'Large Compactor', route: 'Riyadh Park Mall', routeId: 'T5', status: 'active', health: 78, region: 'North Riyadh', fuel: 45, mileage: 18900, lastService: '2026-01-05', capacity: '20 Tons', totalHours: 5600, cost: 420000 },
     { id: '6', code: 'T-06', plate: 'T-06', driver: 'Salman Khan', type: 'Hook Loader', route: 'Al Nahda District', routeId: 'T6', status: 'active', health: 85, region: 'East Riyadh', fuel: 55, mileage: 9800, lastService: '2026-01-18', capacity: '12 Tons', totalHours: 3100, cost: 310000 },
     { id: '7', code: 'T-07', plate: 'T-07', driver: 'Farukh Saikh', type: 'Pickup', route: 'Ministry of Interior HQ', routeId: 'T7', status: 'active', health: 96, region: 'Central Riyadh', fuel: 80, mileage: 6700, lastService: '2026-01-22', capacity: '5 Tons', totalHours: 1900, cost: 185000 },
     { id: '8', code: 'T-08', plate: 'T-08', driver: 'Omar Khalid', type: 'Large Compactor', route: 'Ring Road Network', routeId: 'T8', status: 'active', health: 94, region: 'Ring Roads', fuel: 90, mileage: 1100, lastService: '2026-02-10', capacity: '18 Tons', totalHours: 400, cost: 410000 },
+    { id: '9', code: 'T-09', plate: 'T-09', driver: 'Youssef Ali', type: 'Compactor', route: 'Diplomatic Quarter', routeId: 'T9', status: 'active', health: 98, region: 'West Riyadh', fuel: 75, mileage: 3200, lastService: '2026-02-12', capacity: '15 Tons', totalHours: 800, cost: 360000 },
 ];
 
 export const TRUCK_ROUTES: Route[] = [

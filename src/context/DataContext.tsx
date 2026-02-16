@@ -37,14 +37,35 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         // console.log("DataProvider mounted");
     }, []);
-    const [trucks, setTrucks] = useState<Truck[]>(INITIAL_TRUCKS as unknown as Truck[]);
-    const [bins, setBins] = useState<Bin[]>(INITIAL_BINS as unknown as Bin[]);
-    const [facilities, setFacilities] = useState<Facility[]>(INITIAL_FACILITIES);
-    const [requests, setRequests] = useState<Request[]>(INITIAL_REQUESTS);
-    const [incidents, setIncidents] = useState<Incident[]>(INITIAL_INCIDENTS);
-    const [routes, setRoutes] = useState<Route[]>(INITIAL_TRUCK_ROUTES as unknown as Route[]);
-    const [machinery, setMachinery] = useState<Machine[]>(INITIAL_MACHINERY as unknown as Machine[]);
-    const [users, setUsers] = useState<User[]>([]);
+    // Helper to initialize state from localStorage or default
+    const getInitialState = <T,>(key: string, defaultState: T): T => {
+        try {
+            const saved = localStorage.getItem(key);
+            return saved ? JSON.parse(saved) : defaultState;
+        } catch (e) {
+            console.error(`Error parsing localStorage for ${key}`, e);
+            return defaultState;
+        }
+    };
+
+    const [trucks, setTrucks] = useState<Truck[]>(() => getInitialState('greenflow_trucks_v3', INITIAL_TRUCKS as unknown as Truck[]));
+    const [bins, setBins] = useState<Bin[]>(() => getInitialState('greenflow_bins_v3', INITIAL_BINS as unknown as Bin[]));
+    const [facilities, setFacilities] = useState<Facility[]>(() => getInitialState('greenflow_facilities_v3', INITIAL_FACILITIES));
+    const [requests, setRequests] = useState<Request[]>(() => getInitialState('greenflow_requests_v3', INITIAL_REQUESTS));
+    const [incidents, setIncidents] = useState<Incident[]>(() => getInitialState('greenflow_incidents_v3', INITIAL_INCIDENTS));
+    const [routes, setRoutes] = useState<Route[]>(() => getInitialState('greenflow_routes_v3', INITIAL_TRUCK_ROUTES as unknown as Route[]));
+    const [machinery, setMachinery] = useState<Machine[]>(() => getInitialState('greenflow_machinery_v3', INITIAL_MACHINERY as unknown as Machine[]));
+    const [users, setUsers] = useState<User[]>(() => getInitialState('greenflow_users_v3', []));
+
+    // Persist state to localStorage whenever it changes
+    useEffect(() => { localStorage.setItem('greenflow_trucks_v3', JSON.stringify(trucks)); }, [trucks]);
+    useEffect(() => { localStorage.setItem('greenflow_bins_v3', JSON.stringify(bins)); }, [bins]);
+    useEffect(() => { localStorage.setItem('greenflow_facilities_v3', JSON.stringify(facilities)); }, [facilities]);
+    useEffect(() => { localStorage.setItem('greenflow_requests_v3', JSON.stringify(requests)); }, [requests]);
+    useEffect(() => { localStorage.setItem('greenflow_incidents_v3', JSON.stringify(incidents)); }, [incidents]);
+    useEffect(() => { localStorage.setItem('greenflow_routes_v3', JSON.stringify(routes)); }, [routes]);
+    useEffect(() => { localStorage.setItem('greenflow_machinery_v3', JSON.stringify(machinery)); }, [machinery]);
+    useEffect(() => { localStorage.setItem('greenflow_users_v3', JSON.stringify(users)); }, [users]);
 
     useEffect(() => {
         // SIMULATION LOOP

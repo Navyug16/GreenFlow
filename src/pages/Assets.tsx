@@ -58,12 +58,12 @@ const AssetsPage = ({ defaultTab = 'trucks', hideTabs = false }: { defaultTab?: 
     const handleUpdateAssetStatus = async (type: 'truck' | 'bin', id: string, newStatus: string) => {
         if (type === 'truck') {
             await updateTruck(id, {
-                status: newStatus as any,
+                status: newStatus,
                 lastService: newStatus === 'active' ? new Date().toISOString().split('T')[0] : undefined
             });
         } else {
             await updateBin(id, {
-                status: newStatus as any,
+                status: newStatus,
                 lastCollection: newStatus === 'active' ? 'Just now' : undefined
             });
         }
