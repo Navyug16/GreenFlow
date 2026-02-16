@@ -201,10 +201,10 @@ const RoutesPage = () => {
         // 3. Assign Bins to Trucks (Clustering)
         const clusters = clusterBinsByTruck(contextRoutes, currentBins);
 
-        const newDisplayRoutes = [];
 
-        // Process sequentially to be gentle on OSRM (Public API rate limits)
-        for (const route of contextRoutes) {
+
+        // Process in parallel to speed up loading
+        const routePromises = contextRoutes.map(async (route, index) => {
             const currentPos = truckPositionsRef.current[route.id] ||
                 (route.region?.includes('North') ? [24.95, 46.70] : [24.75, 46.72]);
 
@@ -231,22 +231,17 @@ const RoutesPage = () => {
             }
 
             // Check if we need to update the path
-            // Update if: 
-            // 1. Assignments changed
-            // 2. OR Current path is 'mock' (too short)
             const binIdsHash = isFull ? 'RETURNING_TO_BASE' : assignedBins.map((b: any) => b.id).sort().join(',');
             const hasChanged = routeBinsHashRef.current[route.id] !== binIdsHash;
             const isMockPath = !route.currentPath || route.currentPath.length < 10;
 
             if (!hasChanged && !isMockPath) {
-                newDisplayRoutes.push(route);
-                continue;
+                return route;
             }
 
             routeBinsHashRef.current[route.id] = binIdsHash;
 
             // Optimize Sequence (TSP)
-            // If assignedBins is empty, this returns [], resulting in [Current -> Facility] path
             const optimizedStops = optimizeStopSequence(
                 currentPos as [number, number],
                 facilityLoc,
@@ -259,24 +254,24 @@ const RoutesPage = () => {
             optimizedStops.forEach((b: any) => waypoints.push([b.lat, b.lng]));
             waypoints.push(facilityLoc);
 
-            // Fetch Route with delay
+            // Fetch Route
             let path = null;
             try {
-                // Determine if we should query OSRM
-                // Respect rate limit: pause 400ms between calls
-                await new Promise(r => setTimeout(r, 400));
+                // Stagger requests slightly to avoid hitting rate limit instantly
+                await new Promise(r => setTimeout(r, index * 100));
                 path = await fetchRouteGeometry(waypoints);
             } catch (err) {
                 console.warn("Route fetch failed for", route.id);
             }
 
-            // If fetch failed, keep old path (even if mock) to avoid disappearing
-            newDisplayRoutes.push({
+            return {
                 ...route,
                 assignedBinIds: optimizedStops.map((b: any) => b.id),
                 currentPath: path || route.currentPath || []
-            });
-        }
+            };
+        });
+
+        const newDisplayRoutes = await Promise.all(routePromises);
 
         setDisplayRoutes(newDisplayRoutes);
         startTimeRef.current = performance.now();

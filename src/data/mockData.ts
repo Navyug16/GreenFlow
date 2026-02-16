@@ -9,9 +9,9 @@ export const CURRENT_USER: User = {
 
 export const ADMIN_STATS: KpiStat[] = [
     { label: 'Total Revenue', value: '4.2M', unit: 'SAR', change: 12, icon: 'DollarSign', color: 'var(--accent-finance)' },
-    { label: 'Active Trucks', value: 8, change: 2, icon: 'Truck', color: 'var(--accent-admin)' }, // Updated from CSV count
-    { label: 'Total Bins', value: '15', change: 5, icon: 'Trash2', color: 'var(--text-secondary)' }, // Updated from CSV count
-    { label: 'Total Drivers', value: 8, change: 1, icon: 'Users', color: 'var(--text-primary)' },
+    { label: 'Active Trucks', value: 6, change: 2, icon: 'Truck', color: 'var(--accent-admin)' }, // Updated from CSV count
+    { label: 'Total Bins', value: '18', change: 5, icon: 'Trash2', color: 'var(--text-secondary)' }, // Updated from CSV count
+    { label: 'Total Drivers', value: 7, change: 1, icon: 'Users', color: 'var(--text-primary)' },
     { label: 'Avg Bin Fill', value: 68, unit: '%', change: -4, icon: 'BarChart3', color: 'var(--accent-manager)' },
     { label: 'Avg Truck Fill', value: 82, unit: '%', change: 8, icon: 'Box', color: 'var(--accent-engineer)' },
 ];
@@ -61,8 +61,8 @@ export const FACILITIES: Facility[] = [
         operatingCost: 12000,
         description: 'Primary disposal site for North Riyadh waste.',
         lastServiceDate: '2026-01-15',
-        lat: 24.8341,
-        lng: 46.6370
+        lat: 24.9200,
+        lng: 46.6500
     },
     {
         id: 'F2',
@@ -79,8 +79,8 @@ export const FACILITIES: Facility[] = [
         operatingCost: 11000,
         description: 'Disposal site for South Riyadh and construction waste.',
         lastServiceDate: '2025-12-10',
-        lat: 24.5247,
-        lng: 46.7224
+        lat: 24.5500,
+        lng: 46.7800
     },
     {
         id: 'F3',
@@ -97,8 +97,8 @@ export const FACILITIES: Facility[] = [
         operatingCost: 8500,
         description: 'Large scale industrial recycling facility.',
         lastServiceDate: '2026-01-20',
-        lat: 25.0186,
-        lng: 47.2956
+        lat: 24.8000,
+        lng: 46.7800
     },
     {
         id: 'F4',
@@ -151,8 +151,8 @@ export const FACILITIES: Facility[] = [
         operatingCost: 12000,
         description: 'Central energy recovery unit.',
         lastServiceDate: '2026-02-02',
-        lat: 24.7117,
-        lng: 46.6740
+        lat: 24.6900,
+        lng: 46.6900
     }
 ];
 
@@ -166,8 +166,7 @@ export const BINS: Bin[] = [
     // T-02: Al Malaz Park
     { id: 'B-03', lat: 24.6655, lng: 46.7255, fillLevel: 30, status: 'active', health: 90, region: 'Central Riyadh', overflowStatus: false, lastCollection: '1 day ago', location: 'Al Malaz Park', cost: 900, routeId: 'T2' },
 
-    // T-03: Second Industrial City
-    { id: 'B-04', lat: 24.5950, lng: 46.8050, fillLevel: 15, status: 'active', health: 80, region: 'South Riyadh', overflowStatus: false, lastCollection: '6 hours ago', location: 'Second Industrial Gate', cost: 1500, routeId: 'T3' },
+    // T-03: Second Industrial City (Removed)
 
     // T-04: King Khalid Airport
     { id: 'B-05', lat: 24.9505, lng: 46.7005, fillLevel: 25, status: 'active', health: 98, region: 'North Riyadh', overflowStatus: false, lastCollection: '30 mins ago', location: 'Airport Terminal 5', cost: 2000, routeId: 'T4' },
@@ -184,7 +183,14 @@ export const BINS: Bin[] = [
 
     // T-07: Ministry of Interior
     { id: 'B-08', lat: 24.6805, lng: 46.6205, fillLevel: 25, status: 'active', health: 96, region: 'Central Riyadh', overflowStatus: false, lastCollection: '4 hours ago', location: 'Ministry of Interior', cost: 1300, routeId: 'T7' },
-    { id: 'B-14', lat: 24.6850, lng: 46.6250, fillLevel: 35, status: 'active', health: 93, region: 'Central Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'Ministry Housing', cost: 1350, routeId: 'T7' }
+    { id: 'B-14', lat: 24.6850, lng: 46.6250, fillLevel: 35, status: 'active', health: 93, region: 'Central Riyadh', overflowStatus: false, lastCollection: '5 hours ago', location: 'Ministry Housing', cost: 1350, routeId: 'T7' },
+
+    // T-08: Ring Road / Connector (New Network Expansion)
+    { id: 'B-20', lat: 24.8200, lng: 46.6500, fillLevel: 65, status: 'active', health: 85, region: 'North Connector', overflowStatus: false, lastCollection: '1 hour ago', location: 'Northern Ring Road Exit 6', cost: 1600, routeId: 'T8' },
+    { id: 'B-21', lat: 24.8400, lng: 46.7000, fillLevel: 40, status: 'active', health: 90, region: 'North Connector', overflowStatus: false, lastCollection: '2 hours ago', location: 'Princess Nourah Univ', cost: 1550, routeId: 'T8' },
+    { id: 'B-22', lat: 24.7500, lng: 46.7800, fillLevel: 55, status: 'active', health: 88, region: 'East Connector', overflowStatus: false, lastCollection: '3 hours ago', location: 'Dammam Road', cost: 1500, routeId: 'T8' },
+    { id: 'B-23', lat: 24.6200, lng: 46.7500, fillLevel: 70, status: 'active', health: 80, region: 'South Connector', overflowStatus: false, lastCollection: '4 hours ago', location: 'Eastern Ring Road South', cost: 1450, routeId: 'T8' },
+    { id: 'B-24', lat: 24.8800, lng: 46.6000, fillLevel: 30, status: 'active', health: 95, region: 'North West', overflowStatus: false, lastCollection: '5 hours ago', location: 'Salbuk Road', cost: 1650, routeId: 'T8' }
 ];
 
 export const MACHINERY: Machine[] = [
@@ -200,11 +206,12 @@ export const REQUESTS: Request[] = [];
 export const TRUCKS: Truck[] = [
     { id: '1', code: 'T-01', plate: 'T-01', driver: 'Mohammed Al-Salem', type: 'Compactor', route: 'Olaya Corridor', routeId: 'T1', status: 'active', health: 95, region: 'Central Riyadh', fuel: 72, mileage: 12500, lastService: '2026-01-10', capacity: '15 Tons', totalHours: 4200, cost: 350000 },
     { id: '2', code: 'T-02', plate: 'T-02', driver: 'Ajay Kumar', type: 'Pickup', route: 'Al Malaz Park Area', routeId: 'T2', status: 'active', health: 88, region: 'Central Riyadh', fuel: 65, mileage: 8100, lastService: '2026-01-15', capacity: '5 Tons', totalHours: 2100, cost: 180000 },
-    { id: '3', code: 'T-03', plate: 'T-03', driver: 'Faisal Al-Harbi', type: 'Medium Compactor', route: 'Second Industrial City', routeId: 'T3', status: 'maintenance', health: 45, region: 'South Riyadh', fuel: 10, mileage: 14200, lastService: '2025-12-20', capacity: '10 Tons', totalHours: 3800, cost: 280000 },
+    // Removed T-03 (Maintenance)
     { id: '4', code: 'T-04', plate: 'T-04', driver: 'Ahmed Hassan', type: 'Pickup', route: 'King Khalid Airport', routeId: 'T4', status: 'active', health: 92, region: 'North Riyadh', fuel: 88, mileage: 5600, lastService: '2026-01-25', capacity: '5 Tons', totalHours: 1500, cost: 190000 },
     { id: '5', code: 'T-05', plate: 'T-05', driver: 'Abdul Rehman', type: 'Large Compactor', route: 'Riyadh Park Mall', routeId: 'T5', status: 'active', health: 78, region: 'North Riyadh', fuel: 45, mileage: 18900, lastService: '2026-01-05', capacity: '20 Tons', totalHours: 5600, cost: 420000 },
     { id: '6', code: 'T-06', plate: 'T-06', driver: 'Salman Khan', type: 'Hook Loader', route: 'Al Nahda District', routeId: 'T6', status: 'active', health: 85, region: 'East Riyadh', fuel: 55, mileage: 9800, lastService: '2026-01-18', capacity: '12 Tons', totalHours: 3100, cost: 310000 },
     { id: '7', code: 'T-07', plate: 'T-07', driver: 'Farukh Saikh', type: 'Pickup', route: 'Ministry of Interior HQ', routeId: 'T7', status: 'active', health: 96, region: 'Central Riyadh', fuel: 80, mileage: 6700, lastService: '2026-01-22', capacity: '5 Tons', totalHours: 1900, cost: 185000 },
+    { id: '8', code: 'T-08', plate: 'T-08', driver: 'Omar Khalid', type: 'Large Compactor', route: 'Ring Road Network', routeId: 'T8', status: 'active', health: 94, region: 'Ring Roads', fuel: 90, mileage: 1100, lastService: '2026-02-10', capacity: '18 Tons', totalHours: 400, cost: 410000 },
 ];
 
 export const TRUCK_ROUTES: Route[] = [
@@ -238,21 +245,7 @@ export const TRUCK_ROUTES: Route[] = [
         efficiency: 89,
         currentPath: [[24.6650, 46.7250], [24.6700, 46.7300]] as [number, number][]
     },
-    {
-        id: 'T3',
-        name: 'Industrial Route',
-        region: 'South Zone',
-        truckId: '3',
-        assignedBinIds: ['B-04'],
-        distance: 24.0,
-        currentFuelCost: 85.00,
-        driver: 'Faisal Al-Harbi',
-        vehicle: 'Compactor T-03',
-        status: 'delayed',
-        progress: 0,
-        efficiency: 10,
-        currentPath: [[24.5950, 46.8050], [24.6000, 46.8000]] as [number, number][]
-    },
+    // Removed T3 (Linked to Maintenance Truck)
     {
         id: 'T4',
         name: 'Airport Route',
@@ -312,5 +305,20 @@ export const TRUCK_ROUTES: Route[] = [
         progress: 80,
         efficiency: 95,
         currentPath: [[24.6800, 46.6200], [24.6850, 46.6250]] as [number, number][]
+    },
+    {
+        id: 'T8',
+        name: 'Ring Road Network',
+        region: 'Ring Roads',
+        truckId: '8',
+        assignedBinIds: ['B-20', 'B-21', 'B-22', 'B-23', 'B-24'],
+        distance: 45.2,
+        currentFuelCost: 150.00,
+        driver: 'Omar Khalid',
+        vehicle: 'Large Compactor T-08',
+        status: 'active',
+        progress: 25,
+        efficiency: 91,
+        currentPath: [[24.8200, 46.6500], [24.8400, 46.7000]] as [number, number][]
     }
 ];
