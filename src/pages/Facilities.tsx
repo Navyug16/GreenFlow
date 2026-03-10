@@ -1,11 +1,303 @@
 import { useState, useEffect } from 'react';
-import { Factory, Zap, Trash2, Activity, AlertTriangle, X, Thermometer, Gauge, BarChart3, Wind, Droplets } from 'lucide-react';
+import { Factory, Zap, Trash2, Activity, X, Thermometer, Gauge, BarChart3, Wind, Droplets, Download, ShieldAlert } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import MapWidget from '../components/MapWidget';
 import type { Facility } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+const getIcon = (type: string) => {
+    switch (type) {
+        case 'energy': return Zap;
+        case 'dumpyard': return Trash2;
+        case 'recycle': return Factory;
+        default: return Factory;
+    }
+};
+
+const getColor = (type: string) => {
+    switch (type) {
+        case 'energy': return '#fbbf24'; // var(--accent-engineer)
+        case 'dumpyard': return '#ef4444'; // var(--accent-danger)
+        case 'recycle': return '#34d399'; // var(--accent-manager)
+        default: return '#f1f5f9'; // var(--text-primary)
+    }
+};
+
+const getUnit = (type: string) => {
+    switch (type) {
+        case 'energy': return 'kW';
+        case 'dumpyard': return 'Tons';
+        case 'recycle': return 'Tons';
+        default: return 'Units';
+    }
+};
+
+const MetricCard = ({ label, value, unit, icon: Icon, color }: any) => (
+    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: color, fontSize: '0.85rem', fontWeight: 500 }}>
+            <Icon size={16} /> {label}
+        </div>
+        <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+            {value} <span style={{ fontSize: '0.85rem', opacity: 0.5, fontWeight: 400 }}>{unit}</span>
+        </div>
+    </div>
+);
+
+// Modal Component
+const FacilityModal = ({ facility, onClose, metrics }: { facility: Facility, onClose: () => void, metrics: any }) => {
+    const Icon = getIcon(facility.type);
+    const color = getColor(facility.type);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+                position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                background: 'rgba(2, 6, 23, 0.85)', backdropFilter: 'blur(12px)',
+                display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999,
+                padding: '1rem'
+            }}
+        >
+            <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="glass-panel-heavy"
+                style={{
+                    width: '100%', maxWidth: '900px', borderRadius: '24px',
+                    maxHeight: 'min(95vh, 800px)', // Constrain height
+                    overflow: 'hidden', position: 'relative',
+                    display: 'flex', flexDirection: 'column'
+                }}
+            >
+                {/* Header HUD */}
+                <div style={{ padding: '1.5rem 2rem', background: `linear-gradient(135deg, ${color}15, transparent)`, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                        <div style={{
+                            padding: '1rem', background: color, borderRadius: '16px', color: '#0f172a',
+                            boxShadow: `0 0 30px ${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                            <Icon size={32} />
+                        </div>
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.03em' }}>{facility.name}</h2>
+                                <div style={{ padding: '0.25rem 0.75rem', background: `${color}20`, color: color, borderRadius: '50px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', border: `1px solid ${color}40` }}>
+                                    {facility.status}
+                                </div>
+                            </div>
+                            <p style={{ margin: '0.25rem 0 0', opacity: 0.5, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 500 }}>
+                                {facility.region} <span style={{ opacity: 0.3 }}>|</span> <span style={{ textTransform: 'uppercase' }}>{facility.type} UNIT</span>
+                            </p>
+                        </div>
+                    </div>
+                    <motion.button
+                        whileHover={{ scale: 1.1, rotate: 90 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={onClose}
+                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.75rem', borderRadius: '50%', cursor: 'pointer' }}
+                    >
+                        <X size={20} />
+                    </motion.button>
+                </div>
+
+                {/* Content HUD - Scrollable */}
+                <div style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                        {facility.type === 'energy' && (
+                            <>
+                                <MetricCard label="Turbine RPM" value={Math.round(metrics.rpm)} unit="STABLE" icon={Wind} color="#38bdf8" />
+                                <MetricCard label="Core Temp" value={Math.round(metrics.temp)} unit="°C" icon={Thermometer} color="#f43f5e" />
+                                <MetricCard label="Grid Load" value={metrics.voltage.toFixed(2)} unit="kV" icon={Zap} color="#fbbf24" />
+                                <MetricCard label="System Psi" value={Math.round(metrics.pressure)} unit="BAR" icon={Gauge} color="#a78bfa" />
+                            </>
+                        )}
+                        {facility.type === 'recycle' && (
+                            <>
+                                <MetricCard label="Line Vel" value={(metrics.rpm / 1000).toFixed(1)} unit="m/s" icon={Activity} color="#38bdf8" />
+                                <MetricCard label="Purity" value={(90 + metrics.voltage).toFixed(1)} unit="%" icon={Zap} color="#34d399" />
+                                <MetricCard label="Throughput" value={Math.round(metrics.rpm / 50)} unit="U/h" icon={Factory} color="#a78bfa" />
+                                <MetricCard label="Sensors" value="ACTIVE" unit="" icon={ShieldAlert} color="#fbbf24" />
+                            </>
+                        )}
+                        {facility.type === 'dumpyard' && (
+                            <>
+                                <MetricCard label="Methane" value={(metrics.pressure * 2).toFixed(0)} unit="ppm" icon={Wind} color="#34d399" />
+                                <MetricCard label="Compression" value={(metrics.rpm / 500).toFixed(1)} unit="x" icon={BarChart3} color="#38bdf8" />
+                                <MetricCard label="Moisture" value={(metrics.voltage * 4).toFixed(1)} unit="%" icon={Droplets} color="#fbbf24" />
+                                <MetricCard label="Integrity" value="NOMINAL" unit="" icon={ShieldAlert} color="#f43f5e" />
+                            </>
+                        )}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Activity size={18} /> Operational Logs
+                            </h3>
+                            <p style={{ lineHeight: '1.6', opacity: 0.7, fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                                {facility.description} Peak efficiency reported across all subsystems. AI-driven optimization active.
+                            </p>
+
+                            <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                <div>
+                                    <div style={{ fontSize: '0.7rem', opacity: 0.4, marginBottom: '0.25rem', textTransform: 'uppercase' }}>Capacity</div>
+                                    <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{facility.capacity?.toLocaleString()} <span style={{ fontSize: '0.7rem', opacity: 0.4 }}>Tons</span></div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.7rem', opacity: 0.4, marginBottom: '0.25rem', textTransform: 'uppercase' }}>Revenue</div>
+                                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10b981' }}>SAR {facility.revenue?.toLocaleString()}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ position: 'relative', width: '140px', height: '140px' }}>
+                                <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%' }}>
+                                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
+                                    <motion.circle
+                                        cx="50" cy="50" r="45" fill="none" stroke={color} strokeWidth="6"
+                                        strokeDasharray="283"
+                                        initial={{ strokeDashoffset: 283 }}
+                                        animate={{ strokeDashoffset: 283 - (283 * 0.94) }}
+                                        transition={{ duration: 1.5, ease: "easeOut" }}
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '2rem', fontWeight: 900, color: 'white' }}>94%</div>
+                                    <div style={{ fontSize: '0.7rem', opacity: 0.5, fontWeight: 600 }}>OEE</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer HUD */}
+                <div style={{ padding: '1rem 2rem', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'flex-end', gap: '1rem', flexShrink: 0 }}>
+                    <button onClick={onClose} style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>Close Console</button>
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        style={{
+                            padding: '0.75rem 1.75rem', background: color, color: '#0f172a', border: 'none', borderRadius: '12px',
+                            fontWeight: 700, cursor: 'pointer', boxShadow: `0 8px 30px ${color}30`,
+                            display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem'
+                        }}
+                    >
+                        <Download size={18} /> Audit PDF
+                    </motion.button>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+};
+
+const ReportModal = ({ isOpen, onClose, facilities, reportDuration, setReportDuration }: any) => {
+    if (!isOpen) return null;
+
+    // Mock calculations based on duration
+    const multiplier = reportDuration === 'day' ? 1 : reportDuration === 'week' ? 7 : 30;
+    const totalProcessed = 2500 * multiplier;
+    const totalEnergy = 850 * multiplier;
+    const totalRevenue = facilities.reduce((acc: number, f: Facility) => acc + f.revenue, 0) * multiplier;
+
+    const downloadReport = () => {
+        const doc = new jsPDF();
+        doc.setFontSize(20);
+        doc.setTextColor(40, 40, 40);
+        doc.text("GreenFlow - System Performance Report", 14, 22);
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+        doc.text(`Duration: ${reportDuration.charAt(0).toUpperCase() + reportDuration.slice(1)}`, 14, 35);
+        doc.setDrawColor(200);
+        doc.line(14, 40, 196, 40);
+        doc.setFontSize(14);
+        doc.setTextColor(0);
+        doc.text("System Overview", 14, 50);
+        doc.setFontSize(12);
+        doc.setTextColor(60);
+        doc.text(`Total Waste Processed: ${totalProcessed.toLocaleString()} Tons`, 14, 60);
+        doc.text(`Total Energy Generated: ${totalEnergy.toLocaleString()} kW`, 14, 68);
+        doc.text(`Total Revenue: ${totalRevenue.toLocaleString()} SAR`, 14, 76);
+
+        const tableData = facilities.map((f: Facility) => [
+            f.name,
+            f.type.toUpperCase(),
+            f.region,
+            `${Math.round(f.output * multiplier)} ${getUnit(f.type)}`,
+            f.status.toUpperCase()
+        ]);
+
+        autoTable(doc, {
+            startY: 85,
+            head: [['Facility Name', 'Type', 'Region', 'Output', 'Status']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { fillColor: [16, 185, 129] },
+            styles: { fontSize: 10 }
+        });
+        doc.save(`greenflow-report-${reportDuration}.pdf`);
+    };
+
+    return (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '2rem', borderRadius: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <h2 style={{ margin: 0 }}>System Analytics</h2>
+                    <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', padding: '0.5rem', borderRadius: '50%' }}><X size={20} /></button>
+                </div>
+
+                <div style={{ marginBottom: '2rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.75rem', opacity: 0.6, fontSize: '0.9rem' }}>Select Duration</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                        {(['day', 'week', 'month'] as const).map(d => (
+                            <button
+                                key={d}
+                                onClick={() => setReportDuration(d)}
+                                style={{
+                                    padding: '0.75rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)',
+                                    background: reportDuration === d ? '#10b981' : 'rgba(255,255,255,0.02)',
+                                    color: reportDuration === d ? '#0f172a' : 'white', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
+                                }}
+                            >
+                                {d.charAt(0).toUpperCase() + d.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '16px', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <span style={{ opacity: 0.6 }}>Processed</span>
+                        <span style={{ fontWeight: 700 }}>{totalProcessed.toLocaleString()} Tons</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <span style={{ opacity: 0.6 }}>Generation</span>
+                        <span style={{ fontWeight: 700 }}>{totalEnergy.toLocaleString()} kW</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#10b981' }}>
+                        <span style={{ opacity: 0.8 }}>Total Revenue</span>
+                        <span style={{ fontWeight: 800 }}>SAR {totalRevenue.toLocaleString()}</span>
+                    </div>
+                </div>
+
+                <button
+                    onClick={downloadReport}
+                    style={{ width: '100%', padding: '1rem', background: '#10b981', color: '#0f172a', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}
+                >
+                    <Download size={20} /> Generate PDF Report
+                </button>
+            </motion.div>
+        </div>
+    );
+};
 
 const FacilitiesPage = () => {
     const { user } = useAuth();
@@ -38,10 +330,10 @@ const FacilitiesPage = () => {
             setMetrics(prev => ({
                 temp: prev.temp + (Math.random() - 0.5) * 5,
                 pressure: prev.pressure + (Math.random() - 0.5) * 2,
-                voltage: prev.voltage + (Math.random() - 0.5) * 0.1,
-                rpm: prev.rpm + (Math.random() - 0.5) * 50
+                voltage: prev.voltage + (Math.random() - 0.5) * 1, // Increased variation for "live" feel
+                rpm: prev.rpm + (Math.random() - 0.5) * 100
             }));
-        }, 2000);
+        }, 1000);
 
         return () => clearInterval(interval);
     }, [selectedFacility]);
@@ -50,505 +342,120 @@ const FacilitiesPage = () => {
         return <div style={{ padding: '2rem', color: 'white' }}>Access Restricted: Engineers view specific machinery via the dedicated module.</div>;
     }
 
-    const getIcon = (type: string) => {
-        switch (type) {
-            case 'energy': return Zap;
-            case 'dumpyard': return Trash2;
-            case 'recycle': return Factory;
-            default: return Factory;
-        }
-    };
-
-    const getColor = (type: string) => {
-        switch (type) {
-            case 'energy': return '#fbbf24'; // var(--accent-engineer)
-            case 'dumpyard': return '#ef4444'; // var(--accent-danger)
-            case 'recycle': return '#34d399'; // var(--accent-manager)
-            default: return '#f1f5f9'; // var(--text-primary)
-        }
-    };
-
-    const getUnit = (type: string) => {
-        switch (type) {
-            case 'energy': return 'kW';
-            case 'dumpyard': return 'Tons';
-            case 'recycle': return 'Tons';
-            default: return 'Units';
-        }
-    };
-
-    // Modal Component
-    const FacilityModal = ({ facility, onClose }: { facility: Facility, onClose: () => void }) => {
-        const Icon = getIcon(facility.type);
-        const color = getColor(facility.type);
-
-        return (
-            <div style={{
-                position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-                background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
-                display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999
-            }}>
-                <div style={{
-                    background: '#1e293b', width: '90%', maxWidth: '800px', borderRadius: '24px',
-                    border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
-                }}>
-                    {/* Header */}
-                    <div style={{ padding: '2rem', background: `linear-gradient(to right, ${color}20, transparent)`, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                            <div style={{ padding: '1rem', background: color, borderRadius: '16px', color: '#0f172a', boxShadow: `0 0 20px ${color}60` }}>
-                                <Icon size={32} />
-                            </div>
-                            <div>
-                                <h2 style={{ fontSize: '1.75rem', fontWeight: 700, margin: 0, color: 'white' }}>{facility.name}</h2>
-                                <p style={{ margin: '0.25rem 0 0', opacity: 0.6, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    {facility.region} • <span style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>{facility.type}</span>
-                                </p>
-                            </div>
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ padding: '2rem', maxWidth: '1600px', margin: '0 auto', minHeight: '100vh', color: 'white' }}
+        >
+            {/* Header Bento Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
+                <div className="glass-panel" style={{ gridColumn: 'span 2', padding: '2rem', position: 'relative', overflow: 'hidden', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                            <div className="pulse-dot" />
+                            <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#10b981' }}>Live Network Status: Operational</span>
                         </div>
-                        <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '0.75rem', borderRadius: '50%', cursor: 'pointer', transition: 'background 0.2s' }}>
-                            <X size={24} />
-                        </button>
+                        <h1 style={{ fontSize: '2.5rem', fontWeight: 900, margin: 0, letterSpacing: '-0.03em' }}>Facilities Command</h1>
                     </div>
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setShowReportModal(true)}
+                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '1rem 1.5rem', borderRadius: '14px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem', position: 'relative', zIndex: 1 }}
+                    >
+                        <Download size={18} /> Analytics Export
+                    </motion.button>
+                </div>
 
-                    {/* Content */}
-                    <div style={{ padding: '2rem', color: 'white' }}>
+                <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', opacity: 0.5, marginBottom: '0.5rem' }}>
+                        <Activity size={16} /> <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Efficiency OEE</span>
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: 900 }}>94.2% <span style={{ fontSize: '0.9rem', color: '#10b981', fontWeight: 700 }}>+1.2%</span></div>
+                </div>
 
-                        {/* Status Grid */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-                            {/* Specific Metrics Based on Type */}
-                            {facility.type === 'energy' && (
-                                <>
-                                    <MetricCard label="Turbine Speed" value={Math.round(metrics.rpm)} unit="RPM" icon={Wind} color="#38bdf8" />
-                                    <MetricCard label="Core Temp" value={Math.round(metrics.temp)} unit="°C" icon={Thermometer} color="#f43f5e" />
-                                    <MetricCard label="Grid Voltage" value={metrics.voltage.toFixed(2)} unit="kV" icon={Zap} color="#fbbf24" />
-                                    <MetricCard label="System Pressure" value={Math.round(metrics.pressure)} unit="Bar" icon={Gauge} color="#a78bfa" />
-                                </>
-                            )}
-                            {facility.type === 'recycle' && (
-                                <>
-                                    <MetricCard label="Line Speed" value={(metrics.rpm / 1000).toFixed(1)} unit="m/s" icon={Activity} color="#38bdf8" />
-                                    <MetricCard label="Contamination" value={(metrics.pressure / 10).toFixed(1)} unit="%" icon={AlertTriangle} color="#f43f5e" />
-                                    <MetricCard label="Purity Level" value={(90 + metrics.voltage).toFixed(1)} unit="%" icon={Zap} color="#34d399" />
-                                    <MetricCard label="Bales/Hr" value={Math.round(metrics.rpm / 50)} unit="Units" icon={Factory} color="#a78bfa" />
-                                </>
-                            )}
-                            {facility.type === 'dumpyard' && (
-                                <>
-                                    <MetricCard label="Methane Level" value={(metrics.pressure * 2).toFixed(0)} unit="ppm" icon={Wind} color="#34d399" />
-                                    <MetricCard label="Soil Moisture" value={(metrics.voltage * 4).toFixed(1)} unit="%" icon={Droplets} color="#38bdf8" />
-                                    <MetricCard label="Compression" value={(metrics.rpm / 500).toFixed(1)} unit="x" icon={BarChart3} color="#fbbf24" />
-                                    <MetricCard label="Capacity" value={Math.round((facility.currentLoad / facility.capacity) * 100)} unit="%" icon={Gauge} color="#f43f5e" />
-                                </>
-                            )}
-                        </div>
+                <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', opacity: 0.5, marginBottom: '0.5rem' }}>
+                        <Zap size={16} /> <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Energy Recovery</span>
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: 900 }}>850 <span style={{ fontSize: '1rem', opacity: 0.5 }}>kW/h</span></div>
+                </div>
+            </div>
 
-                        {/* Main Info */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem' }}>Operational Overview</h3>
-                                <p style={{ lineHeight: '1.6', opacity: 0.8, fontSize: '0.95rem' }}>{facility.description} Currently operating at optimized levels with automated systems monitoring operational integrity.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2.5rem' }}>
+                {/* Map Section */}
+                <div style={{ position: 'sticky', top: '2rem', height: '600px' }}>
+                    <div className="glass-panel-heavy" style={{ padding: '1rem', borderRadius: '28px', border: '1px solid rgba(255,255,255,0.08)', height: '100%' }}>
+                        <MapWidget showFacilitiesOnly={true} />
+                    </div>
+                </div>
 
-                                <div style={{ marginTop: '1.5rem', display: 'flex', gap: '2rem' }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '0.25rem' }}>Daily Output</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 600 }}>{facility.output?.toLocaleString()} <span style={{ fontSize: '0.9rem', fontWeight: 400, opacity: 0.7 }}>{getUnit(facility.type)}</span></div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '0.25rem' }}>Incoming Load</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 600 }}>{facility.incomingWaste?.toLocaleString()} <span style={{ fontSize: '0.9rem', fontWeight: 400, opacity: 0.7 }}>Tons</span></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem' }}>Efficiency</h3>
-                                <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    {/* Simple Pure CSS Gauge */}
+                {/* Facilities List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {facilities.map((f, idx) => (
+                        <motion.div
+                            key={f.id}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                            className="glow-card glass-panel"
+                            style={{ padding: '1.75rem', overflow: 'hidden' }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                                     <div style={{
-                                        width: '180px', height: '180px', borderRadius: '50%',
-                                        background: `conic-gradient(${color} 0% 75%, rgba(255,255,255,0.1) 75% 100%)`,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        boxShadow: `0 0 30px ${color}30`
+                                        padding: '1.25rem', background: `${getColor(f.type)}15`, color: getColor(f.type), borderRadius: '20px',
+                                        boxShadow: `0 0 30px ${getColor(f.type)}10`, border: `1px solid ${getColor(f.type)}25`
                                     }}>
-                                        <div style={{ width: '150px', height: '150px', background: '#1e293b', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                            <div style={{ fontSize: '2.5rem', fontWeight: 700, color: color }}>94%</div>
-                                            <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>OEE Score</div>
+                                        {(() => { const Icon = getIcon(f.type); return <Icon size={28} />; })()}
+                                    </div>
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>{f.name}</h3>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.4rem', opacity: 0.5, fontSize: '0.85rem', fontWeight: 600 }}>
+                                            {f.region} • {f.type.toUpperCase()} UNIT
                                         </div>
                                     </div>
                                 </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{f.output.toLocaleString()} <span style={{ fontSize: '0.8rem', opacity: 0.5, fontWeight: 500 }}>{getUnit(f.type)}</span></div>
+                                    <div style={{ color: getColor(f.type), fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.4rem' }}>{f.status}</div>
+                                </div>
                             </div>
-                        </div>
 
-                    </div>
-                    {/* Footer Actions */}
-                    <div style={{ padding: '1.5rem 2rem', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                        <button onClick={onClose} style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', cursor: 'pointer' }}>Close</button>
-                        <button style={{ padding: '0.75rem 1.5rem', background: color, color: '#0f172a', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', boxShadow: `0 4px 12px ${color}40` }}>Download Report</button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    const MetricCard = ({ label, value, unit, icon: Icon, color }: any) => (
-        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: color, fontSize: '0.85rem', fontWeight: 500 }}>
-                <Icon size={16} /> {label}
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
-                {value} <span style={{ fontSize: '0.85rem', opacity: 0.5, fontWeight: 400 }}>{unit}</span>
-            </div>
-        </div>
-    );
-
-    const ReportModal = () => {
-        // Mock calculations based on duration
-        const multiplier = reportDuration === 'day' ? 1 : reportDuration === 'week' ? 7 : 30;
-        const totalProcessed = 2500 * multiplier;
-        const totalEnergy = 850 * multiplier;
-        const totalRevenue = facilities.reduce((acc, f) => acc + f.revenue, 0) * multiplier;
-
-        const downloadReport = () => {
-            const doc = new jsPDF();
-
-            // Title
-            doc.setFontSize(20);
-            doc.setTextColor(40, 40, 40);
-            doc.text("GreenFlow - System Performance Report", 14, 22);
-
-            // Metadata
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
-            doc.text(`Duration: ${reportDuration.charAt(0).toUpperCase() + reportDuration.slice(1)}`, 14, 35);
-
-            // Summary Info
-            doc.setDrawColor(200);
-            doc.line(14, 40, 196, 40);
-
-            doc.setFontSize(14);
-            doc.setTextColor(0);
-            doc.text("System Overview", 14, 50);
-
-            doc.setFontSize(12);
-            doc.setTextColor(60);
-            doc.text(`Total Waste Processed: ${totalProcessed.toLocaleString()} Tons`, 14, 60);
-            doc.text(`Total Energy Generated: ${totalEnergy.toLocaleString()} kW`, 14, 68);
-            doc.text(`Total Revenue: ${totalRevenue.toLocaleString()} SAR`, 14, 76);
-
-            // Table of Facilities
-            const tableData = facilities.map(f => [
-                f.name,
-                f.type.toUpperCase(),
-                f.region,
-                `${Math.round(f.output * multiplier)} ${getUnit(f.type)}`,
-                f.status.toUpperCase()
-            ]);
-
-            autoTable(doc, {
-                startY: 85,
-                head: [['Facility Name', 'Type', 'Region', 'Output', 'Status']],
-                body: tableData,
-                theme: 'grid',
-                headStyles: { fillColor: [16, 185, 129] }, // Green
-                styles: { fontSize: 10 }
-            });
-
-            // Footer
-            const pageCount = doc.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(150);
-                doc.text('Confidential - Internal Use Only', 14, doc.internal.pageSize.height - 10);
-            }
-
-            doc.save(`GreenFlow_Report_${reportDuration}_${Date.now()}.pdf`);
-        };
-
-        return (
-            <div style={{
-                position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-                background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)',
-                display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999
-            }}>
-                <div style={{
-                    background: '#1e293b', width: '90%', maxWidth: '600px', borderRadius: '16px',
-                    border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
-                }}>
-                    <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h2 style={{ margin: 0, fontSize: '1.25rem' }}>System Performance Report</h2>
-                        <button onClick={() => setShowReportModal(false)}><X size={20} color="white" /></button>
-                    </div>
-
-                    <div style={{ padding: '1.5rem' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', padding: '0.25rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', width: 'fit-content' }}>
-                            {(['day', 'week', 'month'] as const).map(d => (
-                                <button
-                                    key={d}
-                                    onClick={() => setReportDuration(d)}
-                                    style={{
-                                        padding: '0.5rem 1rem',
-                                        borderRadius: '6px',
-                                        border: 'none',
-                                        background: reportDuration === d ? 'var(--accent-admin)' : 'transparent',
-                                        color: reportDuration === d ? '#fff' : 'var(--text-secondary)',
-                                        textTransform: 'capitalize',
-                                        cursor: 'pointer',
-                                        fontWeight: 500
-                                    }}
+                            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
+                                <motion.button
+                                    whileHover={{ scale: 1.02, background: 'rgba(255,255,255,0.08)' }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => setSelectedFacility(f)}
+                                    style={{ flex: 1, padding: '0.9rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
                                 >
-                                    {d}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Waste Processed</div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{totalProcessed.toLocaleString()} <span style={{ fontSize: '0.8rem' }}>Tons</span></div>
+                                    Access Command Console
+                                </motion.button>
                             </div>
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Energy Generated</div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--status-warning)' }}>{totalEnergy.toLocaleString()} <span style={{ fontSize: '0.8rem' }}>kW</span></div>
-                            </div>
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', gridColumn: 'span 2' }}>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Total Revenue Generated</div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--status-good)' }}>SAR {totalRevenue.toLocaleString()}</div>
-                            </div>
-                        </div>
-
-                        <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)' }}>Facility Breakdown</h4>
-                        <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {facilities.map(f => (
-                                <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '4px' }}>
-                                    <span>{f.name}</span>
-                                    <span>{Math.round(f.output * multiplier)} {getUnit(f.type)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                        <button onClick={() => setShowReportModal(false)} style={{ padding: '0.75rem', background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '6px', cursor: 'pointer' }}>Cancel</button>
-                        <button onClick={downloadReport} style={{ padding: '0.75rem 1rem', background: 'var(--status-good)', border: 'none', color: 'white', borderRadius: '6px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <BarChart3 size={18} /> Download PDF
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            {/* Facility Map View */}
-            <div className="card" style={{ height: '400px', padding: '0.5rem' }}>
-                <MapWidget showBins={false} />
-            </div>
-
-            {/* Header / Overview */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.05))', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
-                    <div style={{ padding: '0.75rem', background: 'rgba(34, 197, 94, 0.2)', borderRadius: '12px', color: 'var(--status-good)' }}>
-                        <Factory size={24} />
-                    </div>
-                    <div>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Total Processing</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>2,500 <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Tons/Day</span></div>
-                    </div>
-                </div>
-                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(245, 158, 11, 0.05))', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
-                    <div style={{ padding: '0.75rem', background: 'rgba(234, 179, 8, 0.2)', borderRadius: '12px', color: 'var(--status-warning)' }}>
-                        <Zap size={24} />
-                    </div>
-                    <div>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Energy Generated</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>850 <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>kW</span></div>
-                    </div>
-                </div>
-                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '12px', color: 'var(--accent-admin)' }}>
-                        <Activity size={24} />
-                    </div>
-                    <div>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>System Efficiency</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>94%</div>
-                    </div>
-                </div>
-                <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-panel)', border: '1px solid var(--glass-border)', cursor: 'pointer' }} onClick={() => setShowReportModal(true)}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
-                        <Activity size={24} />
-                        <span style={{ fontWeight: 600 }}>Generate Report</span>
-                    </div>
+                        </motion.div>
+                    ))}
                 </div>
             </div>
 
-            {/* Facilities List */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-                {Array.isArray(facilities) && facilities.map(facility => {
-                    if (!facility) return null;
-                    const Icon = getIcon(facility.type);
-                    const color = getColor(facility.type);
+            <ReportModal
+                isOpen={showReportModal}
+                onClose={() => setShowReportModal(false)}
+                facilities={facilities}
+                reportDuration={reportDuration}
+                setReportDuration={setReportDuration}
+            />
 
-                    return (
-                        <div key={facility.id} className="card" style={{ position: 'relative', overflow: 'hidden' }}>
-                            {facility.name?.includes('West') && facility.type === 'dumpyard' && (
-                                <div style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    right: 0,
-                                    background: 'var(--accent-danger)',
-                                    color: 'white',
-                                    padding: '0.25rem 1rem',
-                                    borderBottomLeftRadius: '12px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700
-                                }}>
-                                    RESTRICTED
-                                </div>
-                            )}
-
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{
-                                        padding: '1rem',
-                                        borderRadius: '16px',
-                                        background: `${color}15`,
-                                        color: color,
-                                        border: `1px solid ${color}30`
-                                    }}>
-                                        <Icon size={32} />
-                                    </div>
-                                    <div>
-                                        <h3 style={{ margin: 0, fontSize: '1.25rem' }}>{facility.name}</h3>
-                                        <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-tertiary)', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                            {facility.region} • {facility.type?.replace('_', ' ')}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Status Badge */}
-                                <div style={{
-                                    padding: '0.25rem 0.75rem',
-                                    borderRadius: '50px',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 600,
-                                    background: facility.status === 'operational' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                    color: facility.status === 'operational' ? 'var(--status-good)' : 'var(--status-danger)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.25rem'
-                                }}>
-                                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }}></span>
-                                    {facility.status?.toUpperCase()}
-                                </div>
-                            </div>
-
-                            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', minHeight: '3rem', fontSize: '0.9rem' }}>
-                                {facility.description}
-                            </p>
-
-                            {/* Metrics Grid */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <div style={{ background: 'var(--bg-main)', padding: '0.75rem', borderRadius: '8px' }}>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '0.25rem' }}>Incoming Waste</div>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>{facility.incomingWaste} <span style={{ fontSize: '0.8rem' }}>Tons/day</span></div>
-                                </div>
-                                <div style={{ background: 'var(--bg-main)', padding: '0.75rem', borderRadius: '8px' }}>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '0.25rem' }}>Revenue</div>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--status-good)' }}>SAR {facility.revenue?.toLocaleString()}</div>
-                                </div>
-                            </div>
-
-                            {/* Utilization Bar */}
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                                    <span style={{ color: 'var(--text-secondary)' }}>Capacity Utilization</span>
-                                    <span style={{ fontWeight: 600 }}>{Math.round((facility.currentLoad / facility.capacity) * 100)}%</span>
-                                </div>
-                                <div style={{ width: '100%', height: '8px', background: 'var(--bg-panel)', borderRadius: '4px', overflow: 'hidden' }}>
-                                    <div style={{
-                                        width: `${(facility.currentLoad / facility.capacity) * 100}%`,
-                                        height: '100%',
-                                        background: (facility.currentLoad / facility.capacity) > 0.9 ? 'var(--status-danger)' : color,
-                                        borderRadius: '4px'
-                                    }} />
-                                </div>
-                                <div style={{ textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
-                                    {facility.currentLoad?.toLocaleString()} / {facility.capacity?.toLocaleString()} Tons
-                                </div>
-                            </div>
-
-                            {/* Categories */}
-                            <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                {facility.wasteCategory?.map(cat => (
-                                    <span key={cat} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)' }}>
-                                        {cat}
-                                    </span>
-                                ))}
-                            </div>
-
-                            <div style={{
-                                background: 'var(--bg-main)',
-                                padding: '1rem',
-                                borderRadius: '8px',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: '1.5rem'
-                            }}>
-                                <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Output ({facility.type === 'energy' ? 'Energy' : 'Recycled'})</span>
-                                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'white' }}>
-                                    {facility.output} <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{getUnit(facility.type)}</span>
-                                </span>
-                            </div>
-
-                            {/* Controls */}
-                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                <button
-                                    onClick={() => setSelectedFacility(facility)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '0.75rem',
-                                        background: 'var(--text-primary)',
-                                        color: 'var(--bg-main)',
-                                        border: 'none',
-                                        borderRadius: 'var(--radius-sm)',
-                                        fontWeight: 600,
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '0.5rem'
-                                    }}>
-                                    <Activity size={16} /> View Details
-                                </button>
-                                {user?.role === 'admin' && (
-                                    <button style={{
-                                        padding: '0.75rem',
-                                        background: 'rgba(239, 68, 68, 0.1)',
-                                        color: 'var(--status-danger)',
-                                        border: 'none',
-                                        borderRadius: 'var(--radius-sm)',
-                                        cursor: 'pointer'
-                                    }} title="Emergency Stop">
-                                        <AlertTriangle size={20} />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {showReportModal && <ReportModal />}
-            {
-                selectedFacility && (
-                    <FacilityModal facility={selectedFacility} onClose={() => setSelectedFacility(null)} />
-                )
-            }
-        </div >
+            <AnimatePresence>
+                {selectedFacility && (
+                    <FacilityModal
+                        facility={selectedFacility}
+                        onClose={() => setSelectedFacility(null)}
+                        metrics={metrics}
+                    />
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 };
 

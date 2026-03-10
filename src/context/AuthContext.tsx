@@ -1,7 +1,5 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import type { User, UserRole } from '../types';
-import { auth } from '../lib/firebase';
-import { signOut, onAuthStateChanged } from 'firebase/auth';
 
 
 interface AuthContextType {
@@ -44,19 +42,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         'finance@greenflow.sa': { role: 'finance', name: 'Layla Hassan', password: 'finance', avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' }
     };
 
-    // Sync with Firebase Auth State (Optional fallback if we were using real Firebase Auth)
-    useEffect(() => {
-        if (!auth) return;
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            // Logic kept for potential firebase integration, but primary auth for this demo is credential-based
-            if (!firebaseUser) {
-                // only clear if we strictly want firebase binding, but since we use local creds, we might want to ignore this clearing
-                // setUser(null); 
-            }
-        });
-        return () => unsubscribe();
-    }, []);
-
     const login = async (email: string, password?: string) => {
         // Clear previous errors
         setAuthError(null);
@@ -83,13 +68,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const logout = async () => {
-        if (auth) {
-            try {
-                await signOut(auth);
-            } catch (e) {
-                console.error(e);
-            }
-        }
         setUser(null);
         localStorage.removeItem('greenflow_user');
     };

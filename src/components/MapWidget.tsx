@@ -48,7 +48,7 @@ const truckMarkerIcon = new Icon({
 const CONTAINER_STYLE = { height: '100%', width: '100%', borderRadius: 'var(--radius-md)', overflow: 'hidden' };
 const MAP_STYLE = { height: '100%', width: '100%' };
 
-const MapWidget = ({ showBins = true }: { showBins?: boolean }) => {
+const MapWidget = ({ showBins = true, showFacilitiesOnly = false }: { showBins?: boolean, showFacilitiesOnly?: boolean }) => {
     const { bins = [], facilities = [], trucks = [], routes = [] } = useData();
     const { user } = useAuth();
     const position: [number, number] = [24.7136, 46.6753]; // Riyadh Center
@@ -68,17 +68,19 @@ const MapWidget = ({ showBins = true }: { showBins?: boolean }) => {
 
     // Optimize: Filter Trucks (Manager sees only their region?) - For now show all or filter by region
     const displayTrucks = useMemo(() => {
+        if (showFacilitiesOnly) return [];
         return user?.role === 'manager'
             ? trucks.filter(t => t.region === 'West Riyadh') // Assuming trucks have region data matching manager
             : trucks;
-    }, [trucks, user?.role]);
+    }, [trucks, user?.role, showFacilitiesOnly]);
 
     // Optimize: Routes
     const displayRoutes = useMemo(() => {
+        if (showFacilitiesOnly) return [];
         return user?.role === 'manager'
             ? routes.filter(r => r.region === 'West Riyadh')
             : routes;
-    }, [routes, user?.role]);
+    }, [routes, user?.role, showFacilitiesOnly]);
 
     return (
         <div style={CONTAINER_STYLE}>

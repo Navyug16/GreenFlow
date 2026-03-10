@@ -3,40 +3,54 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import StatsCard from '../components/StatsCard';
 import MapWidget from '../components/MapWidget';
-import {
-    ADMIN_STATS, MANAGER_STATS, ENGINEER_STATS,
-    RECENT_INCIDENTS
-} from '../data/mockData';
-
-
 import { FinanceDashboard } from '../components/FinanceDashboard';
 
 const Overview = () => {
     const { user } = useAuth();
-    const { requests, approveRequest } = useData();
-
-
+    const { requests, approveRequest, trucks, bins, facilities, incidents } = useData();
 
     const stats = useMemo(() => {
         if (!user) return [];
+
+        // Dynamic Stats Calculation
+        const activeTrucks = trucks.filter(t => t.status === 'active').length;
+        const totalIncidents = incidents.filter(i => !i.resolved).length;
+        const avgBinLevel = bins.length > 0 ? Math.round(bins.reduce((acc, b) => acc + b.fillLevel, 0) / bins.length) : 0;
+        const totalRevenue = facilities.reduce((acc, f) => acc + (f.revenue || 0), 0);
+        const operatingExpenses = trucks.reduce((acc, t) => acc + ((100 - (t.fuel || 0)) * 5), 0); // Simulated expense based on fuel used
+
         switch (user.role) {
-            case 'admin': return ADMIN_STATS;
-            case 'manager': return MANAGER_STATS;
-            case 'engineer': return ENGINEER_STATS;
-            // Finance stats now handled in Dashboard
+            case 'admin':
+                return [
+                    { label: 'Total Revenue', value: `${(totalRevenue / 1000).toFixed(1)}K`, unit: 'SAR', change: 12, icon: 'DollarSign', color: 'var(--status-good)' },
+                    { label: 'Active Fleet', value: activeTrucks, unit: 'Trucks', change: 5, icon: 'Truck', color: 'var(--accent-admin)' },
+                    { label: 'Open Incidents', value: totalIncidents, unit: 'Alerts', change: -8, icon: 'AlertTriangle', color: 'var(--status-danger)' },
+                    { label: 'System Health', value: '98.2', unit: '%', change: 1.5, icon: 'ShieldCheck', color: 'var(--status-good)' }
+                ];
+            case 'manager':
+                return [
+                    { label: 'Region Efficiency', value: '94.5', unit: '%', change: 3.2, icon: 'TrendingUp', color: 'var(--status-good)' },
+                    { label: 'Bins To Collect', value: bins.filter(b => b.fillLevel > 80).length, unit: 'Bins', change: 15, icon: 'Trash2', color: 'var(--status-warning)' },
+                    { label: 'Average Fill', value: avgBinLevel, unit: '%', change: 4.8, icon: 'BarChart3', color: 'var(--accent-manager)' },
+                    { label: 'Active Shifts', value: '18', unit: 'Drivers', change: 0, icon: 'Users', color: 'var(--accent-manager)' }
+                ];
+            case 'engineer':
+                return [
+                    { label: 'Fleet Health', value: Math.round(trucks.reduce((acc, t) => acc + t.health, 0) / trucks.length), unit: '%', change: -1.2, icon: 'Activity', color: 'var(--status-warning)' },
+                    { label: 'Critical Assets', value: trucks.filter(t => t.health < 40).length + bins.filter(b => b.health < 40).length, unit: 'Items', change: 2, icon: 'Settings', color: 'var(--status-danger)' },
+                    { label: 'Maint. Costs', value: (operatingExpenses / 10).toFixed(0), unit: 'SAR', change: 5.4, icon: 'Tool', color: 'var(--accent-engineer)' },
+                    { label: 'Energy Output', value: (facilities.filter(f => f.type === 'energy').reduce((acc, f) => acc + f.output, 0) / 1000).toFixed(1), unit: 'MW', change: 8.2, icon: 'Zap', color: 'var(--status-good)' }
+                ];
             default: return [];
         }
-    }, [user]);
+    }, [user, trucks, bins, facilities, incidents]);
 
-    // Filter to only show pending requests in the dashboard list
-    // For Admin: All pending requests
-    // For Manager: Their own requests (pending, approved, rejected)
     const displayRequests = useMemo(() => {
         if (!user) return [];
         if (user.role === 'admin') {
             return requests.filter(r => r.status === 'pending');
         } else if (user.role === 'manager') {
-            return requests.filter(r => r.requester === user.name || r.requester === 'Manager'); // Filter by manager name or generic
+            return requests.filter(r => r.requester === user.name || r.requester === 'Manager');
         }
         return [];
     }, [requests, user]);
@@ -167,7 +181,7 @@ const Overview = () => {
                         {user.role === 'admin' && (
                             <>
                                 {/* Critical Alerts First */}
-                                {RECENT_INCIDENTS.filter(i => i.severity === 'high' && !i.resolved).map(inc => (
+                                {incidents.filter(i => i.severity === 'high' && !i.resolved).map(inc => (
                                     <div key={inc.id} style={{
                                         padding: '0.75rem',
                                         background: 'rgba(239, 68, 68, 0.05)',
@@ -248,7 +262,7 @@ const Overview = () => {
                                 </div>
 
                                 <h4 style={{ margin: '1rem 0 0.5rem 0', fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>Collection Alerts</h4>
-                                {RECENT_INCIDENTS.slice(0, 2).map(inc => (
+                                {incidents.slice(0, 2).map(inc => (
                                     <div key={inc.id} style={{ fontSize: '0.8rem', padding: '0.5rem', borderLeft: '3px solid var(--status-warning)', background: 'rgba(255,255,255,0.02)' }}>
                                         {inc.message}
                                     </div>
